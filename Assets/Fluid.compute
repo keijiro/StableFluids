@@ -4,6 +4,7 @@
 #pragma kernel PFinish
 #pragma kernel Jacobi1
 #pragma kernel Jacobi2
+#pragma kernel Color
 
 // Common parameter
 float Time;
@@ -25,6 +26,11 @@ RWTexture2D<float> DivW_out;
 Texture2D<float> P_in;
 RWTexture2D<float> P_out;
 
+// Color map
+Texture2D<half4> C_in;
+SamplerState samplerC_in;
+RWTexture2D<half4> C_out;
+
 // Jacobi method arguments
 float Alpha, Beta;
 
@@ -42,10 +48,7 @@ void Advect(uint2 tid : SV_DispatchThreadID)
     uint Nx, Ny;
     U_in.GetDimensions(Nx, Ny);
 
-    float2 uv = (tid + 0.5) / float2(Nx, Ny);
-    float2 vel = U_in.SampleLevel(samplerU_in, uv, 0);
-
-    uv -= vel * DeltaTime;
+    float2 uv = (tid + 0.5) / float2(Nx, Ny) - U_in[tid] * DeltaTime;
     W_out[tid] = U_in.SampleLevel(samplerU_in, uv, 0);
 }
 
@@ -56,10 +59,10 @@ void Force(uint2 tid : SV_DispatchThreadID)
     W_out.GetDimensions(columns, rows);
 
     float2 p = (float2)tid / float2(columns, rows);
-    float2 o = 0.5 + float2(sin(Time * 2.1), sin(Time * 3.13)) * 0.3;
+    float2 o = 0.5 + float2(sin(Time * 1.56), sin(Time * 1.13)) * 0.3;
 
     float d = distance(o, p);
-    W_out[tid] += (p - o) / max(d, 1e-5) / exp(80 * d) * 4 * saturate(sin(Time * 2.14));
+    W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 5;
 }
 
 [numthreads(8, 8, 1)]
@@ -107,4 +110,14 @@ void Jacobi2(uint2 tid : SV_DispatchThreadID)
 {
     X2_out[tid] = (X2_in[tid - int2(1, 0)] + X2_in[tid + int2(1, 0)] +
                    X2_in[tid - int2(0, 1)] + X2_in[tid + int2(0, 1)] + Alpha * B2_in[tid]) / Beta;
+}
+
+[numthreads(8, 8, 1)]
+void Color(uint2 tid : SV_DispatchThreadID)
+{
+    uint Nx, Ny;
+    U_in.GetDimensions(Nx, Ny);
+
+    float2 uv = (tid + 0.5) / float2(Nx, Ny) - U_in[tid] * DeltaTime;
+    C_out[tid] = C_in.SampleLevel(samplerC_in, uv, 0);
 }

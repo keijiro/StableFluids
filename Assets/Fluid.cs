@@ -8,6 +8,7 @@ namespace StableFluids
 
         [SerializeField] Vector2Int _dimensions = new Vector2Int(256, 256);
         [SerializeField] float _viscosity = 10000;
+        [SerializeField] Texture2D _initialColorMap;
 
         #endregion
 
@@ -30,6 +31,7 @@ namespace StableFluids
             public const int PFinish = 3;
             public const int Jacobi1 = 4;
             public const int Jacobi2 = 5;
+            public const int Color = 6;
         }
 
         int ThreadCountX { get { return _dimensions.x / 8; } }
@@ -57,6 +59,9 @@ namespace StableFluids
             return rt;
         }
 
+        RenderTexture _colorRT1;
+        RenderTexture _colorRT2;
+
         #endregion
 
         #region MonoBehaviour implementation
@@ -75,6 +80,11 @@ namespace StableFluids
             VFB.V3 = AllocateBuffer(2);
             VFB.P1 = AllocateBuffer(1);
             VFB.P2 = AllocateBuffer(1);
+
+            _colorRT1 = AllocateBuffer(4);
+            _colorRT2 = AllocateBuffer(4);
+
+            Graphics.Blit(_initialColorMap, _colorRT1);
         }
 
         void OnDestroy()
@@ -86,6 +96,9 @@ namespace StableFluids
             Destroy(VFB.V3);
             Destroy(VFB.P1);
             Destroy(VFB.P2);
+
+            Destroy(_colorRT1);
+            Destroy(_colorRT2);
         }
 
         void Update()
@@ -148,13 +161,21 @@ namespace StableFluids
             _compute.SetTexture(Kernels.PFinish, "P_in", VFB.P1);
             _compute.SetTexture(Kernels.PFinish, "U_out", VFB.V1);
             _compute.Dispatch(Kernels.PFinish, ThreadCountX, ThreadCountY, 1);
+
+            // Apply the velocity field to the color map.
+            _compute.SetTexture(Kernels.Color, "U_in", VFB.V1);
+            _compute.SetTexture(Kernels.Color, "C_in", _colorRT1);
+            _compute.SetTexture(Kernels.Color, "C_out", _colorRT2);
+            _compute.Dispatch(Kernels.Color, ThreadCountX, ThreadCountY, 1);
+
+            var temp = _colorRT1;
+            _colorRT1 = _colorRT2;
+            _colorRT2 = temp;
         }
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            _shaderSheet.SetTexture("_VelocityField", VFB.V1);
-            _shaderSheet.SetTexture("_PressureField", VFB.P1);
-            Graphics.Blit(source, destination, _shaderSheet, 0);
+            Graphics.Blit(_colorRT1, destination);
         }
 
         #endregion
