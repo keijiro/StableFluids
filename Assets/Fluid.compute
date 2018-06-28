@@ -59,10 +59,10 @@ void Force(uint2 tid : SV_DispatchThreadID)
     W_out.GetDimensions(columns, rows);
 
     float2 p = (float2)tid / float2(columns, rows);
-    float2 o = 0.5 + float2(sin(Time * 1.56), sin(Time * 1.13)) * 0.3;
+    float2 o = 0.5 + float2(sin(Time * 3.13), sin(Time * 1.32)) * 0.3;
 
     float d = distance(o, p);
-    W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 5;
+    W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 10;
 }
 
 [numthreads(8, 8, 1)]
