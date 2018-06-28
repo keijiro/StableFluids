@@ -7,7 +7,7 @@ namespace StableFluids
         #region Editable attributes
 
         [SerializeField] Vector2Int _dimensions = new Vector2Int(256, 256);
-        [SerializeField] float _viscosity = 10000;
+        [SerializeField] float _viscosity = 0.01f;
         [SerializeField] Texture2D _initialColorMap;
 
         #endregion
@@ -103,8 +103,11 @@ namespace StableFluids
 
         void Update()
         {
+            var dt = Time.deltaTime;
+            var dx = 1.0f / _dimensions.y;
+
             _compute.SetFloat("Time", Time.time);
-            _compute.SetFloat("DeltaTime", Time.deltaTime);
+            _compute.SetFloat("DeltaTime", dt);
 
             // Advection
             _compute.SetTexture(Kernels.Advect, "U_in", VFB.V1);
@@ -112,7 +115,7 @@ namespace StableFluids
             _compute.Dispatch(Kernels.Advect, ThreadCountX, ThreadCountY, 1);
 
             // Diffuse setup
-            var dif_alpha = _viscosity / (_dimensions.x * _dimensions.x * Time.deltaTime);
+            var dif_alpha = dx * dx / (_viscosity * dt);
             _compute.SetFloat("Alpha", dif_alpha);
             _compute.SetFloat("Beta", 4 + dif_alpha);
             Graphics.CopyTexture(VFB.V2, VFB.V1);
@@ -141,7 +144,7 @@ namespace StableFluids
             _compute.Dispatch(Kernels.PSetup, ThreadCountX, ThreadCountY, 1);
 
             // Jacobi iteration
-            _compute.SetFloat("Alpha", -1.0f / (_dimensions.x * _dimensions.x));
+            _compute.SetFloat("Alpha", -dx * dx);
             _compute.SetFloat("Beta", 4);
             _compute.SetTexture(Kernels.Jacobi1, "B1_in", VFB.V3);
 

@@ -45,21 +45,21 @@ RWTexture2D<float2> X2_out;
 [numthreads(8, 8, 1)]
 void Advect(uint2 tid : SV_DispatchThreadID)
 {
-    uint Nx, Ny;
-    U_in.GetDimensions(Nx, Ny);
+    uint2 dim;
+    W_out.GetDimensions(dim.x, dim.y);
 
-    float2 uv = (tid + 0.5) / float2(Nx, Ny) - U_in[tid] * DeltaTime;
+    float2 uv = (tid + 0.5) / dim - U_in[tid] * DeltaTime;
     W_out[tid] = U_in.SampleLevel(samplerU_in, uv, 0);
 }
 
 [numthreads(8, 8, 1)]
 void Force(uint2 tid : SV_DispatchThreadID)
 {
-    uint columns, rows;
-    W_out.GetDimensions(columns, rows);
+    uint2 dim;
+    W_out.GetDimensions(dim.x, dim.y);
 
-    float2 p = (float2)tid / float2(columns, rows);
-    float2 o = 0.5 + float2(sin(Time * 3.13), sin(Time * 1.32)) * 0.3;
+    float2 p = ((float2)tid - (float2)dim / 2) / dim.y;
+    float2 o = float2(sin(Time * 3.13), sin(Time * 1.32)) * 0.3;
 
     float d = distance(o, p);
     W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 10;
@@ -68,34 +68,36 @@ void Force(uint2 tid : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 void PSetup(uint2 tid : SV_DispatchThreadID)
 {
-    uint Nx, Ny;
-    W_in.GetDimensions(Nx, Ny);
+    uint2 dim;
+    W_in.GetDimensions(dim.x, dim.y);
 
-    DivW_out[tid] = (W_in[tid + int2(1, 0)].x - W_in[tid - int2(1, 0)].x) * Nx / 2 +
-                    (W_in[tid + int2(0, 1)].y - W_in[tid - int2(0, 1)].y) * Ny / 2;
+    DivW_out[tid] = (W_in[tid + int2(1, 0)].x - W_in[tid - int2(1, 0)].x +
+                     W_in[tid + int2(0, 1)].y - W_in[tid - int2(0, 1)].y) * dim.y / 2;
 
     P_out[tid] = 0;
 }
 
 [numthreads(8, 8, 1)]
-void PFinish(int2 tid : SV_DispatchThreadID)
+void PFinish(uint2 tid : SV_DispatchThreadID)
 {
-    int Nx, Ny;
-    W_in.GetDimensions(Nx, Ny);
+    uint2 dim;
+    W_in.GetDimensions(dim.x, dim.y);
 
-    if (any(tid == 0) || any(tid == int2(Nx - 1, Ny - 1))) return;
+    if (any(tid == 0) || any(tid == dim - 1)) return;
 
     float P1 = P_in[max(tid - int2(1, 0), 1)];
-    float P2 = P_in[min(tid + int2(1, 0), int2(Nx - 2, Ny - 2))];
+    float P2 = P_in[min(tid + int2(1, 0), dim - 2)];
     float P3 = P_in[max(tid - int2(0, 1), 1)];
-    float P4 = P_in[min(tid + int2(0, 1), int2(Nx - 2, Ny - 2))];
+    float P4 = P_in[min(tid + int2(0, 1), dim - 2)];
 
-    U_out[tid] = W_in[tid] - float2(P2 - P1, P4 - P3) * Nx / 2;
+    float2 u = W_in[tid] - float2(P2 - P1, P4 - P3) * dim.y / 2;
 
-    if (tid.x == 1) U_out[int2(0, tid.y)] = -U_out[tid];
-    if (tid.y == 1) U_out[int2(tid.x, 0)] = -U_out[tid];
-    if (tid.x == Nx - 1) U_out[int2(Nx - 1, tid.y)] = -U_out[tid];
-    if (tid.y == Ny - 1) U_out[int2(tid.x, Ny - 1)] = -U_out[tid];
+    U_out[tid] = u;
+
+    if (tid.x == 1) U_out[int2(0, tid.y)] = -u;
+    if (tid.y == 1) U_out[int2(tid.x, 0)] = -u;
+    if (tid.x == dim.x - 2) U_out[int2(dim.x - 1, tid.y)] = -u;
+    if (tid.y == dim.y - 2) U_out[int2(tid.x, dim.y - 1)] = -u;
 }
 
 [numthreads(8, 8, 1)]
@@ -115,9 +117,9 @@ void Jacobi2(uint2 tid : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 void Color(uint2 tid : SV_DispatchThreadID)
 {
-    uint Nx, Ny;
-    U_in.GetDimensions(Nx, Ny);
+    uint2 dim;
+    U_in.GetDimensions(dim.x, dim.y);
 
-    float2 uv = (tid + 0.5) / float2(Nx, Ny) - U_in[tid] * DeltaTime;
+    float2 uv = (tid + 0.5) / dim - U_in[tid] * DeltaTime;
     C_out[tid] = C_in.SampleLevel(samplerC_in, uv, 0);
 }
