@@ -4,7 +4,6 @@
 #pragma kernel PFinish
 #pragma kernel Jacobi1
 #pragma kernel Jacobi2
-#pragma kernel Color
 
 // Common parameter
 float Time;
@@ -62,7 +61,7 @@ void Force(uint2 tid : SV_DispatchThreadID)
     float2 o = float2(sin(Time * 3.13), sin(Time * 1.32)) * 0.3;
 
     float d = distance(o, p);
-    W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 12;
+    W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 40;
 }
 
 [numthreads(8, 8, 1)]
@@ -112,22 +111,4 @@ void Jacobi2(uint2 tid : SV_DispatchThreadID)
 {
     X2_out[tid] = (X2_in[tid - int2(1, 0)] + X2_in[tid + int2(1, 0)] +
                    X2_in[tid - int2(0, 1)] + X2_in[tid + int2(0, 1)] + Alpha * B2_in[tid]) / Beta;
-}
-
-[numthreads(8, 8, 1)]
-void Color(uint2 tid : SV_DispatchThreadID)
-{
-    uint2 dim;
-    U_in.GetDimensions(dim.x, dim.y);
-
-    float2 p = ((float2)tid - (float2)dim / 2) / dim.y;
-    float2 o = float2(sin(Time * 3.13), sin(Time * 1.32)) * 0.3;
-
-    float d = distance(o, p);
-    float3 c = saturate(sin(Time * float3(6.72, 5.12, 4.98)) + 0.5);
-    float param = saturate(2 / exp(100 * d));
-
-    float2 uv = (tid + 0.5) / dim - U_in[tid] * DeltaTime;
-    float3 src = C_in.SampleLevel(samplerC_in, uv, 0).xyz;
-    C_out[tid] = half4(lerp(src, c, param), 1);
 }

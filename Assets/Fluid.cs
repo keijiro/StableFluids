@@ -8,7 +8,6 @@ namespace StableFluids
 
         [SerializeField] Vector2Int _dimensions = new Vector2Int(256, 256);
         [SerializeField] float _viscosity = 0.01f;
-        [SerializeField] Texture2D _initialColorMap;
 
         #endregion
 
@@ -31,7 +30,6 @@ namespace StableFluids
             public const int PFinish = 3;
             public const int Jacobi1 = 4;
             public const int Jacobi2 = 5;
-            public const int Color = 6;
         }
 
         int ThreadCountX { get { return _dimensions.x / 8; } }
@@ -54,6 +52,17 @@ namespace StableFluids
             if (componentCount == 2) format = RenderTextureFormat.RGHalf;
 
             var rt = new RenderTexture(_dimensions.x, _dimensions.y, 0, format);
+            rt.enableRandomWrite = true;
+            rt.Create();
+            return rt;
+        }
+        RenderTexture AllocateBuffer2(int componentCount)
+        {
+            var format = RenderTextureFormat.ARGBHalf;
+            if (componentCount == 1) format = RenderTextureFormat.RHalf;
+            if (componentCount == 2) format = RenderTextureFormat.RGHalf;
+
+            var rt = new RenderTexture(1920, 1080, 0, format);
             rt.enableRandomWrite = true;
             rt.Create();
             return rt;
@@ -81,10 +90,8 @@ namespace StableFluids
             VFB.P1 = AllocateBuffer(1);
             VFB.P2 = AllocateBuffer(1);
 
-            _colorRT1 = AllocateBuffer(4);
-            _colorRT2 = AllocateBuffer(4);
-
-            Graphics.Blit(_initialColorMap, _colorRT1);
+            _colorRT1 = AllocateBuffer2(4);
+            _colorRT2 = AllocateBuffer2(4);
         }
 
         void OnDestroy()
@@ -166,10 +173,8 @@ namespace StableFluids
             _compute.Dispatch(Kernels.PFinish, ThreadCountX, ThreadCountY, 1);
 
             // Apply the velocity field to the color map.
-            _compute.SetTexture(Kernels.Color, "U_in", VFB.V1);
-            _compute.SetTexture(Kernels.Color, "C_in", _colorRT1);
-            _compute.SetTexture(Kernels.Color, "C_out", _colorRT2);
-            _compute.Dispatch(Kernels.Color, ThreadCountX, ThreadCountY, 1);
+            _shaderSheet.SetTexture("_VelocityField", VFB.V1);
+            Graphics.Blit(_colorRT1, _colorRT2, _shaderSheet, 0);
 
             var temp = _colorRT1;
             _colorRT1 = _colorRT2;
@@ -178,7 +183,7 @@ namespace StableFluids
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            Graphics.Blit(_colorRT1, destination);
+            Graphics.Blit(_colorRT1, destination, _shaderSheet, 1);
         }
 
         #endregion
