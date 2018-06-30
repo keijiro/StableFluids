@@ -12,6 +12,11 @@
 float Time;
 float DeltaTime;
 
+// External force
+float2 ForceOrigin;
+float2 ForceVector;
+float ForceExponent;
+
 // U (velocity field)
 Texture2D<float2> U_in;
 SamplerState samplerU_in;
@@ -51,8 +56,10 @@ void Advect(uint2 tid : SV_DispatchThreadID)
     uint2 dim;
     W_out.GetDimensions(dim.x, dim.y);
 
-    float2 uv = (tid + 0.5) / dim - U_in[tid] * DeltaTime;
-    W_out[tid] = U_in.SampleLevel(samplerU_in, uv, 0);
+    float2 uv = (tid + 0.5) / dim;
+    float2 duv = U_in[tid] * float2((float)dim.y / dim.x, 1) * DeltaTime;
+
+    W_out[tid] = U_in.SampleLevel(samplerU_in, uv - duv, 0);
 }
 
 // Add-force step
@@ -62,11 +69,10 @@ void Force(uint2 tid : SV_DispatchThreadID)
     uint2 dim;
     W_out.GetDimensions(dim.x, dim.y);
 
-    float2 p = ((float2)tid - (float2)dim / 2) / dim.y;
-    float2 o = float2(sin(Time * 3.13), sin(Time * 1.32)) * 0.3;
+    float2 pos = (tid + 0.5 - dim * 0.5) / dim.y;
+    float amp = exp(-ForceExponent * distance(ForceOrigin, pos));
 
-    float d = distance(o, p);
-    W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 40;
+    W_out[tid] += ForceVector * amp;
 }
 
 // Setup for Project step (divW calculation)
