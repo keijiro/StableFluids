@@ -1,4 +1,7 @@
-﻿#pragma kernel Advect
+﻿// StableFluids - A GPU implementation of Jos Stam's Stable Fluids on Unity
+// https://github.com/keijiro/StableFluids
+
+#pragma kernel Advect
 #pragma kernel Force
 #pragma kernel PSetup
 #pragma kernel PFinish
@@ -41,6 +44,7 @@ Texture2D<float2> X2_in;
 Texture2D<float2> B2_in;
 RWTexture2D<float2> X2_out;
 
+// Advect step
 [numthreads(8, 8, 1)]
 void Advect(uint2 tid : SV_DispatchThreadID)
 {
@@ -51,6 +55,7 @@ void Advect(uint2 tid : SV_DispatchThreadID)
     W_out[tid] = U_in.SampleLevel(samplerU_in, uv, 0);
 }
 
+// Add-force step
 [numthreads(8, 8, 1)]
 void Force(uint2 tid : SV_DispatchThreadID)
 {
@@ -64,6 +69,7 @@ void Force(uint2 tid : SV_DispatchThreadID)
     W_out[tid] += (p - o) / max(d, 1e-5) / exp(300 * d) * 40;
 }
 
+// Setup for Project step (divW calculation)
 [numthreads(8, 8, 1)]
 void PSetup(uint2 tid : SV_DispatchThreadID)
 {
@@ -76,6 +82,7 @@ void PSetup(uint2 tid : SV_DispatchThreadID)
     P_out[tid] = 0;
 }
 
+// Finishing for Project step (divergence free field calculation)
 [numthreads(8, 8, 1)]
 void PFinish(uint2 tid : SV_DispatchThreadID)
 {
@@ -99,6 +106,7 @@ void PFinish(uint2 tid : SV_DispatchThreadID)
     if (tid.y == dim.y - 2) U_out[int2(tid.x, dim.y - 1)] = -u;
 }
 
+// Jacobi method with a scalar field
 [numthreads(8, 8, 1)]
 void Jacobi1(uint2 tid : SV_DispatchThreadID)
 {
@@ -106,6 +114,7 @@ void Jacobi1(uint2 tid : SV_DispatchThreadID)
                    X1_in[tid - int2(0, 1)] + X1_in[tid + int2(0, 1)] + Alpha * B1_in[tid]) / Beta;
 }
 
+// Jacobi method with a vector field
 [numthreads(8, 8, 1)]
 void Jacobi2(uint2 tid : SV_DispatchThreadID)
 {

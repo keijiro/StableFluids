@@ -143,7 +143,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _dimensions: {x: 1024, y: 576}
   _viscosity: 0.000001
-  _initialColorMap: {fileID: 2800000, guid: b8bdccffd8e46074ea811982d482456c, type: 3}
   _compute: {fileID: 7200000, guid: cd1f70f1f6b4beb45a02e1c088f0a109, type: 3}
   _shader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
 --- !u!20 &1163476468
@@ -155,23 +154,23 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.08477215, g: 0.10683664, b: 0.14150941, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 100
+  near clip plane: 0.1
+  far clip plane: 10
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 1
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
+    m_Bits: 0
+  m_RenderingPath: 1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
@@ -189,7 +188,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1163476465}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

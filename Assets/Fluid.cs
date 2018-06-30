@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿// StableFluids - A GPU implementation of Jos Stam's Stable Fluids on Unity
+// https://github.com/keijiro/StableFluids
+
+using UnityEngine;
 
 namespace StableFluids
 {
@@ -45,31 +48,24 @@ namespace StableFluids
             public static RenderTexture P2;
         }
 
-        RenderTexture AllocateBuffer(int componentCount)
-        {
-            var format = RenderTextureFormat.ARGBHalf;
-            if (componentCount == 1) format = RenderTextureFormat.RHalf;
-            if (componentCount == 2) format = RenderTextureFormat.RGHalf;
-
-            var rt = new RenderTexture(_dimensions.x, _dimensions.y, 0, format);
-            rt.enableRandomWrite = true;
-            rt.Create();
-            return rt;
-        }
-        RenderTexture AllocateBuffer2(int componentCount)
-        {
-            var format = RenderTextureFormat.ARGBHalf;
-            if (componentCount == 1) format = RenderTextureFormat.RHalf;
-            if (componentCount == 2) format = RenderTextureFormat.RGHalf;
-
-            var rt = new RenderTexture(1920, 1080, 0, format);
-            rt.enableRandomWrite = true;
-            rt.Create();
-            return rt;
-        }
-
+        // Color buffers (for double buffering)
         RenderTexture _colorRT1;
         RenderTexture _colorRT2;
+
+        RenderTexture AllocateBuffer(int componentCount, int width = 0, int height = 0)
+        {
+            var format = RenderTextureFormat.ARGBHalf;
+            if (componentCount == 1) format = RenderTextureFormat.RHalf;
+            if (componentCount == 2) format = RenderTextureFormat.RGHalf;
+
+            if (width  == 0) width  = _dimensions.x;
+            if (height == 0) height = _dimensions.y;
+
+            var rt = new RenderTexture(width, height, 0, format);
+            rt.enableRandomWrite = true;
+            rt.Create();
+            return rt;
+        }
 
         #endregion
 
@@ -90,8 +86,8 @@ namespace StableFluids
             VFB.P1 = AllocateBuffer(1);
             VFB.P2 = AllocateBuffer(1);
 
-            _colorRT1 = AllocateBuffer2(4);
-            _colorRT2 = AllocateBuffer2(4);
+            _colorRT1 = AllocateBuffer(4, Screen.width, Screen.height);
+            _colorRT2 = AllocateBuffer(4, Screen.width, Screen.height);
         }
 
         void OnDestroy()
@@ -172,10 +168,11 @@ namespace StableFluids
             _compute.SetTexture(Kernels.PFinish, "U_out", VFB.V1);
             _compute.Dispatch(Kernels.PFinish, ThreadCountX, ThreadCountY, 1);
 
-            // Apply the velocity field to the color map.
+            // Apply the velocity field to the color buffer.
             _shaderSheet.SetTexture("_VelocityField", VFB.V1);
             Graphics.Blit(_colorRT1, _colorRT2, _shaderSheet, 0);
 
+            // Swap the color buffers.
             var temp = _colorRT1;
             _colorRT1 = _colorRT2;
             _colorRT2 = temp;
