@@ -17,12 +17,9 @@ System Requirements
 References
 ----------
 
-- [Stable Fluids, Jos Stam]
-  (http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf)
-- [Real-Time Fluid Dynamics for Games, Jos Stam]
-  (https://pdfs.semanticscholar.org/847f/819a4ea14bd789aca8bc88e85e906cfc657c.pdf)
-- [Fast Fluid Dynamics Simulation on the GPU, Mark J. Harris]
-  (http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html)
+- [Stable Fluids, Jos Stam](http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf)
+- [Real-Time Fluid Dynamics for Games, Jos Stam](https://pdfs.semanticscholar.org/847f/819a4ea14bd789aca8bc88e85e906cfc657c.pdf)
+- [Fast Fluid Dynamics Simulation on the GPU, Mark J. Harris](http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html)
 
 License
 -------
