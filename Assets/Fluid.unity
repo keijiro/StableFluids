@@ -145,6 +145,7 @@ MonoBehaviour:
   _viscosity: 0.000001
   _force: 300
   _exponent: 200
+  _initial: {fileID: 2800000, guid: ded36cca018f2e741aa6a4c55495a7f0, type: 3}
   _compute: {fileID: 7200000, guid: cd1f70f1f6b4beb45a02e1c088f0a109, type: 3}
   _shader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
 --- !u!20 &1163476468

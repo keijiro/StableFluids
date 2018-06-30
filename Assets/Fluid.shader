@@ -51,8 +51,8 @@ Shader "Hidden/StableFluids"
         half3 rgb = tex2D(_MainTex, i.uv).rgb;
 
         // Mixing channels up to get slowly changing false colors
-        rgb = sin(float3(3.43, 4.43, 3.84) * rgb +
-                  float3(0.12, 0.23, 0.44) * _Time.y) * 0.5 + 0.5;
+        //rgb = sin(float3(3.43, 4.43, 3.84) * rgb +
+        //          float3(0.12, 0.23, 0.44) * _Time.y) * 0.5 + 0.5;
 
         return half4(GammaToLinearSpace(rgb), 1);
     }

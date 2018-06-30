@@ -13,6 +13,7 @@ namespace StableFluids
         [SerializeField] float _viscosity = 0.01f;
         [SerializeField] float _force = 300;
         [SerializeField] float _exponent = 200;
+        [SerializeField] Texture2D _initial;
 
         #endregion
 
@@ -91,6 +92,8 @@ namespace StableFluids
 
             _colorRT1 = AllocateBuffer(4, Screen.width, Screen.height);
             _colorRT2 = AllocateBuffer(4, Screen.width, Screen.height);
+
+            Graphics.Blit(_initial, _colorRT1);
         }
 
         void OnDestroy()
