@@ -72,7 +72,7 @@ void Force(uint2 tid : SV_DispatchThreadID)
     float2 pos = (tid + 0.5 - dim * 0.5) / dim.y;
     float amp = exp(-ForceExponent * distance(ForceOrigin, pos));
 
-    W_out[tid] += ForceVector * amp;
+    W_out[tid] = W_in[tid] + ForceVector * amp;
 }
 
 // Setup for Project step (divW calculation)

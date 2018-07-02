@@ -152,31 +152,30 @@ namespace StableFluids
             // Add external force
             _compute.SetVector("ForceOrigin", input);
             _compute.SetFloat("ForceExponent", _exponent);
-            _compute.SetTexture(Kernels.Force, "W_out", VFB.V2);
+            _compute.SetTexture(Kernels.Force, "W_in", VFB.V2);
+            _compute.SetTexture(Kernels.Force, "W_out", VFB.V3);
 
             if (Input.GetMouseButton(1))
-            {
                 // Random push
                 _compute.SetVector("ForceVector", _force * Random.insideUnitCircle * 0.02f);
-                _compute.Dispatch(Kernels.Force, ThreadCountX, ThreadCountY, 1);
-            }
             else if (Input.GetMouseButton(0))
-            {
                 // Mouse drag
                 _compute.SetVector("ForceVector", (input - _previousInput) * _force);
-                _compute.Dispatch(Kernels.Force, ThreadCountX, ThreadCountY, 1);
-            }
+            else
+                _compute.SetVector("ForceVector", Vector4.zero);
+
+            _compute.Dispatch(Kernels.Force, ThreadCountX, ThreadCountY, 1);
 
             // Projection setup
-            _compute.SetTexture(Kernels.PSetup, "W_in", VFB.V2);
-            _compute.SetTexture(Kernels.PSetup, "DivW_out", VFB.V3);
+            _compute.SetTexture(Kernels.PSetup, "W_in", VFB.V3);
+            _compute.SetTexture(Kernels.PSetup, "DivW_out", VFB.V2);
             _compute.SetTexture(Kernels.PSetup, "P_out", VFB.P1);
             _compute.Dispatch(Kernels.PSetup, ThreadCountX, ThreadCountY, 1);
 
             // Jacobi iteration
             _compute.SetFloat("Alpha", -dx * dx);
             _compute.SetFloat("Beta", 4);
-            _compute.SetTexture(Kernels.Jacobi1, "B1_in", VFB.V3);
+            _compute.SetTexture(Kernels.Jacobi1, "B1_in", VFB.V2);
 
             for (var i = 0; i < 20; i++)
             {
@@ -190,7 +189,7 @@ namespace StableFluids
             }
 
             // Projection finish
-            _compute.SetTexture(Kernels.PFinish, "W_in", VFB.V2);
+            _compute.SetTexture(Kernels.PFinish, "W_in", VFB.V3);
             _compute.SetTexture(Kernels.PFinish, "P_in", VFB.P1);
             _compute.SetTexture(Kernels.PFinish, "U_out", VFB.V1);
             _compute.Dispatch(Kernels.PFinish, ThreadCountX, ThreadCountY, 1);
