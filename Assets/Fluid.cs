@@ -97,6 +97,10 @@ namespace StableFluids
             _colorRT2 = AllocateBuffer(4, Screen.width, Screen.height);
 
             Graphics.Blit(_initial, _colorRT1);
+
+        #if UNITY_IOS
+            Application.targetFrameRate = 60;
+        #endif
         }
 
         void OnDestroy()
