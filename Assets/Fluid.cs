@@ -9,8 +9,8 @@ namespace StableFluids
     {
         #region Editable attributes
 
-        [SerializeField] Vector2Int _dimensions = new Vector2Int(256, 256);
-        [SerializeField] float _viscosity = 0.01f;
+        [SerializeField] int _resolution = 512;
+        [SerializeField] float _viscosity = 1e-6f;
         [SerializeField] float _force = 300;
         [SerializeField] float _exponent = 200;
         [SerializeField] Texture2D _initial;
@@ -39,8 +39,11 @@ namespace StableFluids
             public const int Jacobi2 = 5;
         }
 
-        int ThreadCountX { get { return _dimensions.x / 8; } }
-        int ThreadCountY { get { return _dimensions.y / 8; } }
+        int ThreadCountX { get { return (_resolution                                + 7) / 8; } }
+        int ThreadCountY { get { return (_resolution * Screen.height / Screen.width + 7) / 8; } }
+
+        int ResolutionX { get { return ThreadCountX * 8; } }
+        int ResolutionY { get { return ThreadCountY * 8; } }
 
         // Vector field buffers
         static class VFB
@@ -62,8 +65,8 @@ namespace StableFluids
             if (componentCount == 1) format = RenderTextureFormat.RHalf;
             if (componentCount == 2) format = RenderTextureFormat.RGHalf;
 
-            if (width  == 0) width  = _dimensions.x;
-            if (height == 0) height = _dimensions.y;
+            if (width  == 0) width  = ResolutionX;
+            if (height == 0) height = ResolutionY;
 
             var rt = new RenderTexture(width, height, 0, format);
             rt.enableRandomWrite = true;
@@ -77,7 +80,7 @@ namespace StableFluids
 
         void OnValidate()
         {
-            _dimensions = Vector2Int.Max(Vector2Int.one * 8, _dimensions);
+            _resolution = Mathf.Max(_resolution, 8);
         }
 
         void Start()
@@ -113,7 +116,7 @@ namespace StableFluids
         void Update()
         {
             var dt = Time.deltaTime;
-            var dx = 1.0f / _dimensions.y;
+            var dx = 1.0f / ResolutionY;
 
             // Input point
             var input = new Vector2(
@@ -157,7 +160,7 @@ namespace StableFluids
 
             if (Input.GetMouseButton(1))
                 // Random push
-                _compute.SetVector("ForceVector", _force * Random.insideUnitCircle * 0.02f);
+                _compute.SetVector("ForceVector", Random.insideUnitCircle * _force * 0.025f);
             else if (Input.GetMouseButton(0))
                 // Mouse drag
                 _compute.SetVector("ForceVector", (input - _previousInput) * _force);
