@@ -4,6 +4,10 @@ StableFluids
 ![gif](https://i.imgur.com/XLZlc2e.gif)
 ![gif](https://i.imgur.com/FJBiGbk.gif)
 
+Auto recover version：
+
+![gif](AutoRecover.gif)
+
 This is a straightforward GPU implementation of Jos Stam's [Stable Fluids] on
 Unity.
 

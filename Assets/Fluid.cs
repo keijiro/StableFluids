@@ -14,6 +14,7 @@ namespace StableFluids
         [SerializeField] float _force = 300;
         [SerializeField] float _exponent = 200;
         [SerializeField] Texture2D _initial;
+        [SerializeField] bool _autoRecover = false;
 
         #endregion
 
@@ -86,6 +87,8 @@ namespace StableFluids
         void Start()
         {
             _shaderSheet = new Material(_shader);
+            _shaderSheet.SetTexture("_OriginalTex", _initial);
+            _shaderSheet.SetFloat("_AutoRecove", _autoRecover ? 1 : 0);
 
             VFB.V1 = AllocateBuffer(2);
             VFB.V2 = AllocateBuffer(2);

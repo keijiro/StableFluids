@@ -7,6 +7,8 @@ Shader "Hidden/StableFluids"
     {
         _MainTex("", 2D) = ""
         _VelocityField("", 2D) = ""
+        _OriginalTex("", 2D) = ""
+        [Enum(Off, 0, On, 1)] _AutoRecove ("AutoRecove", Float) = 0
     }
 
     CGINCLUDE
@@ -21,6 +23,9 @@ Shader "Hidden/StableFluids"
     float2 _ForceOrigin;
     float _ForceExponent;
 
+    sampler2D _OriginalTex;
+    float _AutoRecove;
+
     half4 frag_advect(v2f_img i) : SV_Target
     {
         // Time parameters
@@ -33,7 +38,12 @@ Shader "Hidden/StableFluids"
 
         // Color advection with the velocity field
         float2 delta = tex2D(_VelocityField, i.uv).xy * aspect_inv * deltaTime;
-        float3 color = tex2D(_MainTex, i.uv - delta).xyz;
+        float scale = _AutoRecove * pow(clamp(length(tex2D(_VelocityField, i.uv).xy) * 10, 0, 1), 0.05);
+
+        // float3 color = tex2D(_MainTex, i.uv - delta).xyz
+        float3 color = (!_AutoRecove) * tex2D(_MainTex, i.uv - delta).xyz;
+        color += _AutoRecove * (((1 - scale) * tex2D(_OriginalTex, i.uv - delta).xyz) + (scale * tex2D(_MainTex, i.uv - delta).xyz)); 
+
 
         // Dye (injection color)
         float3 dye = saturate(sin(time * float3(2.72, 5.12, 4.98)) + 0.5);
