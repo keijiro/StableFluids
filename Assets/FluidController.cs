@@ -2,7 +2,7 @@
 
 namespace StableFluids {
 
-public sealed class Fluid : MonoBehaviour
+public sealed class FluidController : MonoBehaviour
 {
     #region Public properties
 
@@ -14,8 +14,9 @@ public sealed class Fluid : MonoBehaviour
 
     #region Editable attributes
 
-    [SerializeField] Vector2Int _resolution = new Vector2Int(512, 512);
-    [SerializeField] Texture2D _initial;
+    [SerializeField] RenderTexture _targetTexture;
+    [SerializeField] float _simulationScale = 0.5f;
+    [SerializeField] Texture2D _initialImage;
 
     #endregion
 
@@ -32,50 +33,49 @@ public sealed class Fluid : MonoBehaviour
     Material _material;
     Vector2 _previousInput;
 
-    (RenderTexture rt1, RenderTexture rt2) _color;
-
     #endregion
 
     #region MonoBehaviour implementation
 
     void Start()
     {
+        Debug.Assert(_targetTexture != null, "Target texture is not set.");
+
         _material = new Material(_shader);
+
+        if (_targetTexture == null) return;
+
+        _simulation?.Dispose();
+
+        var w = Mathf.RoundToInt(_targetTexture.width * _simulationScale);
+        var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
         
-        var resolution = new Vector2Int(
-            _resolution.x,
-            _resolution.y * Screen.height / Screen.width
-        );
-        
-        _simulation = new FluidSimulation(_compute, resolution);
+        _simulation = new FluidSimulation(_compute, w, h);
         _simulation.Viscosity = Viscosity;
         _simulation.Force = Force;
         _simulation.Exponent = Exponent;
 
-        _color.rt1 = RTUtil.AllocateUavRgba(Screen.width, Screen.height);
-        _color.rt2 = RTUtil.AllocateUavRgba(Screen.width, Screen.height);
-
-        Graphics.Blit(_initial, _color.rt1);
+        if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
     }
 
     void OnDestroy()
     {
         _simulation?.Dispose();
-        
         Destroy(_material);
-        Destroy(_color.rt1);
-        Destroy(_color.rt2);
     }
 
     void Update()
     {
+        if (_simulation == null) return;
+
         _simulation.Viscosity = Viscosity;
         _simulation.Force = Force;
         _simulation.Exponent = Exponent;
         
+        var aspectRatio = (float)_targetTexture.width / _targetTexture.height;
         var input = new Vector2(
-            (Input.mousePosition.x - Screen.width  * 0.5f) / Screen.height,
-            (Input.mousePosition.y - Screen.height * 0.5f) / Screen.height
+            (Input.mousePosition.x / Screen.width - 0.5f) * aspectRatio,
+            Input.mousePosition.y / Screen.height - 0.5f
         );
 
         Vector2 forceVector;
@@ -92,15 +92,14 @@ public sealed class Fluid : MonoBehaviour
         _material.SetVector("_ForceOrigin", input + offs);
         _material.SetFloat("_ForceExponent", Exponent);
         _material.SetTexture("_VelocityField", _simulation.VelocityField);
-        Graphics.Blit(_color.rt1, _color.rt2, _material, 0);
-
-        _color = (_color.rt2, _color.rt1);
+        
+        var temp = RenderTexture.GetTemporary(_targetTexture.descriptor);
+        Graphics.Blit(_targetTexture, temp, _material, 0);
+        Graphics.CopyTexture(temp, _targetTexture);
+        RenderTexture.ReleaseTemporary(temp);
 
         _previousInput = input;
     }
-
-    void OnRenderImage(RenderTexture source, RenderTexture destination)
-      => Graphics.Blit(_color.rt1, destination, _material, 1);
 
     #endregion
 }

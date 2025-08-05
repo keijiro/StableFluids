@@ -37,10 +37,10 @@ public sealed class FluidSimulation : IDisposable
 
     #region Constructor and Dispose
 
-    public FluidSimulation(ComputeShader compute, Vector2Int resolution)
+    public FluidSimulation(ComputeShader compute, int width, int height)
     {
         _compute = compute;
-        _threadCount = (resolution + Vector2Int.one * 7) / 8;
+        _threadCount = new Vector2Int(width + 7, height + 7) / 8;
         _buffers.v1 = RTUtil.AllocateUavRg(Resolution);
         _buffers.v2 = RTUtil.AllocateUavRg(Resolution);
         _buffers.v3 = RTUtil.AllocateUavRg(Resolution);
