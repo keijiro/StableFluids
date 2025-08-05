@@ -94,7 +94,7 @@ public sealed class FluidController : MonoBehaviour
         _material.SetTexture("_VelocityField", _simulation.VelocityField);
         
         var temp = RenderTexture.GetTemporary(_targetTexture.descriptor);
-        Graphics.Blit(_targetTexture, temp, _material, 0);
+        Graphics.Blit(_targetTexture, temp, _material);
         Graphics.CopyTexture(temp, _targetTexture);
         RenderTexture.ReleaseTemporary(temp);
 
