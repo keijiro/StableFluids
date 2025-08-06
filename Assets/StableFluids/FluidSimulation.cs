@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Kernels = StableFluids.FluidCompute.Kernels;
+using PropID = StableFluids.FluidCompute.PropertyIds;
 
 namespace StableFluids {
 
@@ -65,60 +66,60 @@ public sealed class FluidSimulation : IDisposable
     {
         var dx = 1.0f / Resolution.y;
 
-        _compute.SetFloat("Time", Time.time);
-        _compute.SetFloat("DeltaTime", deltaTime);
+        _compute.SetFloat(PropID.Time, Time.time);
+        _compute.SetFloat(PropID.DeltaTime, deltaTime);
 
-        _compute.SetTexture(Kernels.Advect, "U_in", _buffers.v1);
-        _compute.SetTexture(Kernels.Advect, "W_out", _buffers.v2);
+        _compute.SetTexture(Kernels.Advect, PropID.U_in, _buffers.v1);
+        _compute.SetTexture(Kernels.Advect, PropID.W_out, _buffers.v2);
         _compute.Dispatch(Kernels.Advect, _threadCount);
 
         var dif_alpha = dx * dx / (Viscosity * deltaTime);
-        _compute.SetFloat("Alpha", dif_alpha);
-        _compute.SetFloat("Beta", 4 + dif_alpha);
+        _compute.SetFloat(PropID.Alpha, dif_alpha);
+        _compute.SetFloat(PropID.Beta, 4 + dif_alpha);
         Graphics.CopyTexture(_buffers.v2, _buffers.v1);
-        _compute.SetTexture(Kernels.Jacobi2, "B2_in", _buffers.v1);
+        _compute.SetTexture(Kernels.Jacobi2, PropID.B2_in, _buffers.v1);
 
         for (var i = 0; i < 20; i++)
         {
-            _compute.SetTexture(Kernels.Jacobi2, "X2_in", _buffers.v2);
-            _compute.SetTexture(Kernels.Jacobi2, "X2_out", _buffers.v3);
+            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_in, _buffers.v2);
+            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_out, _buffers.v3);
             _compute.Dispatch(Kernels.Jacobi2, _threadCount);
 
-            _compute.SetTexture(Kernels.Jacobi2, "X2_in", _buffers.v3);
-            _compute.SetTexture(Kernels.Jacobi2, "X2_out", _buffers.v2);
+            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_in, _buffers.v3);
+            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_out, _buffers.v2);
             _compute.Dispatch(Kernels.Jacobi2, _threadCount);
         }
 
-        _compute.SetVector("ForceOrigin", forceOrigin);
-        _compute.SetFloat("ForceExponent", Exponent);
-        _compute.SetVector("ForceVector", forceVector);
-        _compute.SetTexture(Kernels.Force, "W_in", _buffers.v2);
-        _compute.SetTexture(Kernels.Force, "W_out", _buffers.v3);
+        _compute.SetVector(PropID.ForceOrigin, forceOrigin);
+        _compute.SetFloat(PropID.ForceExponent, Exponent);
+        _compute.SetVector(PropID.ForceVector, forceVector);
+        _compute.SetTexture(Kernels.Force, PropID.W_in, _buffers.v2);
+        _compute.SetTexture(Kernels.Force, PropID.W_out, _buffers.v3);
         _compute.Dispatch(Kernels.Force, _threadCount);
 
-        _compute.SetTexture(Kernels.PSetup, "W_in", _buffers.v3);
-        _compute.SetTexture(Kernels.PSetup, "DivW_out", _buffers.v2);
-        _compute.SetTexture(Kernels.PSetup, "P_out", _buffers.p1);
+        _compute.SetTexture(Kernels.PSetup, PropID.W_in, _buffers.v3);
+        _compute.SetTexture(Kernels.PSetup, PropID.DivW_out, _buffers.v2);
+        _compute.SetTexture(Kernels.PSetup, PropID.P_out, _buffers.p1);
         _compute.Dispatch(Kernels.PSetup, _threadCount);
 
-        _compute.SetFloat("Alpha", -dx * dx);
-        _compute.SetFloat("Beta", 4);
-        _compute.SetTexture(Kernels.Jacobi1, "B1_in", _buffers.v2);
+        _compute.SetFloat(PropID.Alpha, -dx * dx);
+        _compute.SetFloat(PropID.Beta, 4);
+        _compute.SetTexture(Kernels.Jacobi1, PropID.B1_in, _buffers.v2);
 
         for (var i = 0; i < 20; i++)
         {
-            _compute.SetTexture(Kernels.Jacobi1, "X1_in", _buffers.p1);
-            _compute.SetTexture(Kernels.Jacobi1, "X1_out", _buffers.p2);
+            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_in, _buffers.p1);
+            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_out, _buffers.p2);
             _compute.Dispatch(Kernels.Jacobi1, _threadCount);
 
-            _compute.SetTexture(Kernels.Jacobi1, "X1_in", _buffers.p2);
-            _compute.SetTexture(Kernels.Jacobi1, "X1_out", _buffers.p1);
+            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_in, _buffers.p2);
+            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_out, _buffers.p1);
             _compute.Dispatch(Kernels.Jacobi1, _threadCount);
         }
 
-        _compute.SetTexture(Kernels.PFinish, "W_in", _buffers.v3);
-        _compute.SetTexture(Kernels.PFinish, "P_in", _buffers.p1);
-        _compute.SetTexture(Kernels.PFinish, "U_out", _buffers.v1);
+        _compute.SetTexture(Kernels.PFinish, PropID.W_in, _buffers.v3);
+        _compute.SetTexture(Kernels.PFinish, PropID.P_in, _buffers.p1);
+        _compute.SetTexture(Kernels.PFinish, PropID.U_out, _buffers.v1);
         _compute.Dispatch(Kernels.PFinish, _threadCount);
     }
 
