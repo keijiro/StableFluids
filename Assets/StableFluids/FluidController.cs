@@ -32,7 +32,7 @@ public sealed class FluidController : MonoBehaviour
 
     FluidSimulation _simulation;
     Material _material;
-    Vector2 _previousInput;
+    FluidInputHandler _input;
 
     #endregion
 
@@ -50,11 +50,13 @@ public sealed class FluidController : MonoBehaviour
 
         var w = Mathf.RoundToInt(_targetTexture.width * _simulationScale);
         var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
-        
+
         _simulation = new FluidSimulation(_compute, w, h);
         _simulation.Viscosity = Viscosity;
         _simulation.Force = Force;
         _simulation.Exponent = Exponent;
+
+        _input = new FluidInputHandler(_targetTexture);
 
         if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
     }
@@ -69,42 +71,32 @@ public sealed class FluidController : MonoBehaviour
     {
         if (_simulation == null) return;
 
+        // Simulation parameters
         _simulation.Viscosity = Viscosity;
         _simulation.Force = Force;
         _simulation.Exponent = Exponent;
-        
-        var aspectRatio = (float)_targetTexture.width / _targetTexture.height;
-        var mousePos = Mouse.current?.position.ReadValue() ?? Vector2.zero;
-        var input = new Vector2(
-            (mousePos.x / Screen.width - 0.5f) * aspectRatio,
-            mousePos.y / Screen.height - 0.5f
-        );
+
+        _input.Update();
 
         Vector2 forceVector;
-        var mouse = Mouse.current;
-        var leftPressed = mouse?.leftButton.isPressed ?? false;
-        var rightPressed = mouse?.rightButton.isPressed ?? false;
-        
-        if (rightPressed)
+        if (_input.RightPressed)
             forceVector = Random.insideUnitCircle * Force * 0.025f;
-        else if (leftPressed)
-            forceVector = (input - _previousInput) * Force;
+        else if (_input.LeftPressed)
+            forceVector = _input.Velocity * Force;
         else
             forceVector = Vector2.zero;
 
-        _simulation.Step(Time.deltaTime, input, forceVector);
+        _simulation.Step(Time.deltaTime, _input.Position, forceVector);
 
-        var offs = Vector2.one * (rightPressed ? 0 : 1e+7f);
-        _material.SetVector("_ForceOrigin", input + offs);
+        var offs = Vector2.one * (_input.RightPressed ? 0 : 1e+7f);
+        _material.SetVector("_ForceOrigin", _input.Position + offs);
         _material.SetFloat("_ForceExponent", Exponent);
         _material.SetTexture("_VelocityField", _simulation.VelocityField);
-        
+
         var temp = RenderTexture.GetTemporary(_targetTexture.descriptor);
         Graphics.Blit(_targetTexture, temp, _material);
         Graphics.CopyTexture(temp, _targetTexture);
         RenderTexture.ReleaseTemporary(temp);
-
-        _previousInput = input;
     }
 
     #endregion
