@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace StableFluids {
 
@@ -73,22 +74,27 @@ public sealed class FluidController : MonoBehaviour
         _simulation.Exponent = Exponent;
         
         var aspectRatio = (float)_targetTexture.width / _targetTexture.height;
+        var mousePos = Mouse.current?.position.ReadValue() ?? Vector2.zero;
         var input = new Vector2(
-            (Input.mousePosition.x / Screen.width - 0.5f) * aspectRatio,
-            Input.mousePosition.y / Screen.height - 0.5f
+            (mousePos.x / Screen.width - 0.5f) * aspectRatio,
+            mousePos.y / Screen.height - 0.5f
         );
 
         Vector2 forceVector;
-        if (Input.GetMouseButton(1))
+        var mouse = Mouse.current;
+        var leftPressed = mouse?.leftButton.isPressed ?? false;
+        var rightPressed = mouse?.rightButton.isPressed ?? false;
+        
+        if (rightPressed)
             forceVector = Random.insideUnitCircle * Force * 0.025f;
-        else if (Input.GetMouseButton(0))
+        else if (leftPressed)
             forceVector = (input - _previousInput) * Force;
         else
             forceVector = Vector2.zero;
 
         _simulation.Step(Time.deltaTime, input, forceVector);
 
-        var offs = Vector2.one * (Input.GetMouseButton(1) ? 0 : 1e+7f);
+        var offs = Vector2.one * (rightPressed ? 0 : 1e+7f);
         _material.SetVector("_ForceOrigin", input + offs);
         _material.SetFloat("_ForceExponent", Exponent);
         _material.SetTexture("_VelocityField", _simulation.VelocityField);

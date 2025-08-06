@@ -4,4 +4,4 @@
 MultiplayerManager:
   m_ObjectHideFlags: 0
   m_EnableMultiplayerRoles: 0
-  m_StrippingTypes: {}
+  m_ActiveMultiplayerRole: 0
