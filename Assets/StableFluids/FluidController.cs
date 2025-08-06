@@ -31,8 +31,8 @@ public sealed class FluidController : MonoBehaviour
     #region Private members
 
     FluidSimulation _simulation;
-    Material _material;
     FluidInputHandler _input;
+    Material _material;
 
     #endregion
 
@@ -42,21 +42,12 @@ public sealed class FluidController : MonoBehaviour
     {
         Debug.Assert(_targetTexture != null, "Target texture is not set.");
 
-        _material = new Material(_shader);
-
-        if (_targetTexture == null) return;
-
-        _simulation?.Dispose();
-
         var w = Mathf.RoundToInt(_targetTexture.width * _simulationScale);
         var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
 
         _simulation = new FluidSimulation(_compute, w, h);
-        _simulation.Viscosity = Viscosity;
-        _simulation.Force = Force;
-        _simulation.Exponent = Exponent;
-
         _input = new FluidInputHandler(_targetTexture);
+        _material = new Material(_shader);
 
         if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
     }
@@ -73,20 +64,26 @@ public sealed class FluidController : MonoBehaviour
 
         // Simulation parameters
         _simulation.Viscosity = Viscosity;
-        _simulation.Force = Force;
-        _simulation.Exponent = Exponent;
 
         _input.Update();
 
-        Vector2 forceVector;
-        if (_input.RightPressed)
-            forceVector = Random.insideUnitCircle * Force * 0.025f;
-        else if (_input.LeftPressed)
-            forceVector = _input.Velocity * Force;
-        else
-            forceVector = Vector2.zero;
+        // Run simulation pre-step (advection + diffusion)
+        _simulation.PreStep(Time.deltaTime);
 
-        _simulation.Step(Time.deltaTime, _input.Position, forceVector);
+        // Apply forces based on input
+        if (_input.RightPressed)
+        {
+            var randomForce = Random.insideUnitCircle * Force * 0.025f;
+            _simulation.ApplyPointForce(_input.Position, randomForce, Exponent);
+        }
+        else if (_input.LeftPressed)
+        {
+            var dragForce = _input.Velocity * Force;
+            _simulation.ApplyPointForce(_input.Position, dragForce, Exponent);
+        }
+
+        // Run simulation post-step (projection)
+        _simulation.PostStep(Time.deltaTime);
 
         var offs = Vector2.one * (_input.RightPressed ? 0 : 1e+7f);
         _material.SetVector("_ForceOrigin", _input.Position + offs);

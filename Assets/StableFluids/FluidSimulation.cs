@@ -10,8 +10,6 @@ public sealed class FluidSimulation : IDisposable
     #region Simulation parameters
 
     public float Viscosity { get; set; } = 1e-6f;
-    public float Force { get; set; } = 300;
-    public float Exponent { get; set; } = 200;
 
     #endregion
 
@@ -60,19 +58,21 @@ public sealed class FluidSimulation : IDisposable
 
     #endregion
 
-    #region Simulation method
+    #region Simulation methods
 
-    public void Step(float deltaTime, Vector2 forceOrigin, Vector2 forceVector)
+    public void PreStep(float deltaTime)
     {
         var dx = 1.0f / Resolution.y;
 
         _compute.SetFloat(PropID.Time, Time.time);
         _compute.SetFloat(PropID.DeltaTime, deltaTime);
 
+        // Advection
         _compute.SetTexture(Kernels.Advect, PropID.U_in, _buffers.v1);
         _compute.SetTexture(Kernels.Advect, PropID.W_out, _buffers.v2);
         _compute.Dispatch(Kernels.Advect, _threadCount);
 
+        // Diffusion
         var dif_alpha = dx * dx / (Viscosity * deltaTime);
         _compute.SetFloat(PropID.Alpha, dif_alpha);
         _compute.SetFloat(PropID.Beta, 4 + dif_alpha);
@@ -89,14 +89,13 @@ public sealed class FluidSimulation : IDisposable
             _compute.SetTexture(Kernels.Jacobi2, PropID.X2_out, _buffers.v2);
             _compute.Dispatch(Kernels.Jacobi2, _threadCount);
         }
+    }
 
-        _compute.SetVector(PropID.ForceOrigin, forceOrigin);
-        _compute.SetFloat(PropID.ForceExponent, Exponent);
-        _compute.SetVector(PropID.ForceVector, forceVector);
-        _compute.SetTexture(Kernels.Force, PropID.W_in, _buffers.v2);
-        _compute.SetTexture(Kernels.Force, PropID.W_out, _buffers.v3);
-        _compute.Dispatch(Kernels.Force, _threadCount);
+    public void PostStep(float deltaTime)
+    {
+        var dx = 1.0f / Resolution.y;
 
+        // Projection
         _compute.SetTexture(Kernels.PSetup, PropID.W_in, _buffers.v3);
         _compute.SetTexture(Kernels.PSetup, PropID.DivW_out, _buffers.v2);
         _compute.SetTexture(Kernels.PSetup, PropID.P_out, _buffers.p1);
@@ -121,6 +120,20 @@ public sealed class FluidSimulation : IDisposable
         _compute.SetTexture(Kernels.PFinish, PropID.P_in, _buffers.p1);
         _compute.SetTexture(Kernels.PFinish, PropID.U_out, _buffers.v1);
         _compute.Dispatch(Kernels.PFinish, _threadCount);
+    }
+
+    #endregion
+
+    #region Force methods
+
+    public void ApplyPointForce(Vector2 origin, Vector2 force, float exponent)
+    {
+        _compute.SetVector(PropID.ForceOrigin, origin);
+        _compute.SetFloat(PropID.ForceExponent, exponent);
+        _compute.SetVector(PropID.ForceVector, force);
+        _compute.SetTexture(Kernels.Force, PropID.W_in, _buffers.v2);
+        _compute.SetTexture(Kernels.Force, PropID.W_out, _buffers.v3);
+        _compute.Dispatch(Kernels.Force, _threadCount);
     }
 
     #endregion
