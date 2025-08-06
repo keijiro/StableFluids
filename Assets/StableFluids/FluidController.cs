@@ -15,16 +15,16 @@ public sealed class FluidController : MonoBehaviour
 
     #region Editable attributes
 
-    [SerializeField] RenderTexture _targetTexture;
+    [SerializeField] RenderTexture _targetTexture = null;
     [SerializeField] float _simulationScale = 0.5f;
-    [SerializeField] Texture2D _initialImage;
+    [SerializeField] Texture2D _initialImage = null;
 
     #endregion
 
     #region Project asset references
 
-    [SerializeField, HideInInspector] ComputeShader _compute;
-    [SerializeField, HideInInspector] Shader _shader;
+    [SerializeField, HideInInspector] ComputeShader _compute = null;
+    [SerializeField, HideInInspector] Shader _shader = null;
 
     #endregion
 
