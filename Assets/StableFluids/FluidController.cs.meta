@@ -4,8 +4,11 @@ MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
+  - _targetTexture: {instanceID: 0}
+  - _initialImage: {instanceID: 0}
   - _compute: {fileID: 7200000, guid: cd1f70f1f6b4beb45a02e1c088f0a109, type: 3}
-  - _shader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
+  - _advectionShader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
+  - _injectionShader: {fileID: 4800000, guid: 674367053d2794eedb3ce4ae9d2ac1a3, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

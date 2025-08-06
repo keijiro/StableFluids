@@ -24,7 +24,8 @@ public sealed class FluidController : MonoBehaviour
     #region Project asset references
 
     [SerializeField, HideInInspector] ComputeShader _compute = null;
-    [SerializeField, HideInInspector] Shader _shader = null;
+    [SerializeField, HideInInspector] Shader _advectionShader = null;
+    [SerializeField, HideInInspector] Shader _injectionShader = null;
 
     #endregion
 
@@ -32,7 +33,7 @@ public sealed class FluidController : MonoBehaviour
 
     FluidSimulation _simulation;
     FluidInputHandler _input;
-    Material _material;
+    (Material advection, Material injection) _materials;
 
     #endregion
 
@@ -47,7 +48,8 @@ public sealed class FluidController : MonoBehaviour
 
         _simulation = new FluidSimulation(_compute, w, h);
         _input = new FluidInputHandler(_targetTexture);
-        _material = new Material(_shader);
+        _materials.advection = new Material(_advectionShader);
+        _materials.injection = new Material(_injectionShader);
 
         if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
     }
@@ -55,19 +57,26 @@ public sealed class FluidController : MonoBehaviour
     void OnDestroy()
     {
         _simulation?.Dispose();
-        Destroy(_material);
+        Destroy(_materials.advection);
+        Destroy(_materials.injection);
     }
 
     void Update()
     {
         if (_simulation == null) return;
-
-        // Simulation parameters
-        _simulation.Viscosity = Viscosity;
-
         _input.Update();
+        StepSimulation();
+        StepVisualization();
+    }
 
-        // Run simulation pre-step (advection + diffusion)
+    #endregion
+
+    #region Simulation step methods
+
+    void StepSimulation()
+    {
+        // Simulation pre-step (advection + diffusion)
+        _simulation.Viscosity = Viscosity;
         _simulation.PreStep(Time.deltaTime);
 
         // Apply forces based on input
@@ -82,17 +91,31 @@ public sealed class FluidController : MonoBehaviour
             _simulation.ApplyPointForce(_input.Position, dragForce, Exponent);
         }
 
-        // Run simulation post-step (projection)
+        // Simulation post-step (projection)
         _simulation.PostStep(Time.deltaTime);
+    }
 
-        var offs = Vector2.one * (_input.RightPressed ? 0 : 1e+7f);
-        _material.SetVector("_ForceOrigin", _input.Position + offs);
-        _material.SetFloat("_ForceExponent", Exponent);
-        _material.SetTexture("_VelocityField", _simulation.VelocityField);
-
+    void StepVisualization()
+    {
         var temp = RenderTexture.GetTemporary(_targetTexture.descriptor);
-        Graphics.Blit(_targetTexture, temp, _material);
-        Graphics.CopyTexture(temp, _targetTexture);
+
+        // Dye injection with right-button input
+        if (_input.RightPressed)
+        {
+            _materials.injection.color = Color.HSVToRGB(Time.time % 1, 1, 1);
+            _materials.injection.SetVector("_Origin", _input.Position);
+            _materials.injection.SetFloat("_Exponent", Exponent);
+            Graphics.Blit(_targetTexture, temp, _materials.injection);
+        }
+        else
+        {
+            Graphics.CopyTexture(_targetTexture, temp);
+        }
+
+        // Color advection
+        _materials.advection.SetTexture("_VelocityField", _simulation.VelocityField);
+        Graphics.Blit(temp, _targetTexture, _materials.advection);
+
         RenderTexture.ReleaseTemporary(temp);
     }
 

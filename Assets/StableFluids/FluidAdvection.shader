@@ -1,4 +1,4 @@
-﻿Shader "Hidden/StableFluids/Advection"
+Shader "Hidden/StableFluids/FluidAdvection"
 {
     Properties
     {
@@ -15,32 +15,15 @@
 
     sampler2D _VelocityField;
 
-    float2 _ForceOrigin;
-    float _ForceExponent;
-
-    half4 frag_advect(v2f_img i) : SV_Target
+    half4 frag(v2f_img i) : SV_Target
     {
-        // Time parameters
-        float time = _Time.y;
-        float deltaTime = unity_DeltaTime.x;
+        // Velocity field sample
+        float2 delta = tex2D(_VelocityField, i.uv).xy;
 
-        // Aspect ratio coefficients
-        float2 aspect = float2(_MainTex_TexelSize.y * _MainTex_TexelSize.z, 1);
-        float2 aspect_inv = float2(_MainTex_TexelSize.x * _MainTex_TexelSize.w, 1);
+        // Aspect ratio compensation
+        delta.x *= _MainTex_TexelSize.x * _MainTex_TexelSize.w;
 
-        // Color advection with the velocity field
-        float2 delta = tex2D(_VelocityField, i.uv).xy * aspect_inv * deltaTime;
-        float3 color = tex2D(_MainTex, i.uv - delta).xyz;
-
-        // Dye (injection color)
-        float3 dye = saturate(sin(time * float3(2.72, 5.12, 4.98)) + 0.5);
-
-        // Blend dye with the color from the buffer.
-        float2 pos = (i.uv - 0.5) * aspect;
-        float amp = exp(-_ForceExponent * distance(_ForceOrigin, pos));
-        color = lerp(color, dye, saturate(amp * 100));
-
-        return half4(color, 1);
+        return tex2D(_MainTex, i.uv - delta * unity_DeltaTime.x);
     }
 
     ENDCG
@@ -52,7 +35,7 @@
         {
             CGPROGRAM
             #pragma vertex vert_img
-            #pragma fragment frag_advect
+            #pragma fragment frag
             ENDCG
         }
     }
