@@ -52,6 +52,10 @@ public sealed class FluidController : MonoBehaviour
         _materials.injection = new Material(_injectionShader);
 
         if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
+
+#if UNITY_IOS
+        Application.targetFrameRate = 60;
+#endif
     }
 
     void OnDestroy()
