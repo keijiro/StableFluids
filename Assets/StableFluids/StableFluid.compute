@@ -9,7 +9,6 @@
 #pragma kernel Jacobi2
 
 // Common parameter
-float Time;
 float DeltaTime;
 
 // External force
@@ -32,11 +31,6 @@ RWTexture2D<float> DivW_out;
 // P (pressure field)
 Texture2D<float> P_in;
 RWTexture2D<float> P_out;
-
-// Color map
-Texture2D<half4> C_in;
-SamplerState samplerC_in;
-RWTexture2D<half4> C_out;
 
 // Jacobi method arguments
 float Alpha, Beta;
