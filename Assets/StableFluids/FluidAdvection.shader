@@ -20,8 +20,8 @@ Shader "Hidden/StableFluids/FluidAdvection"
         // Velocity field sample
         float2 delta = tex2D(_VelocityField, i.uv).xy;
 
-        // Aspect ratio compensation
-        delta.x *= _MainTex_TexelSize.x * _MainTex_TexelSize.w;
+        // Aspect ratio compensation (width-based normalization)
+        delta.y *= _MainTex_TexelSize.y * _MainTex_TexelSize.z;
 
         return tex2D(_MainTex, i.uv - delta * unity_DeltaTime.x);
     }

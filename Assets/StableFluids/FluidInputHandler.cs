@@ -102,7 +102,7 @@ public sealed class FluidInputHandler
         var screenAspect = (float)Screen.width / Screen.height;
         var textureAspect = (float)_targetTexture.width / _targetTexture.height;
         var input = screenPos - new Vector2(Screen.width, Screen.height) / 2;
-        var width = textureAspect > screenAspect ? Screen.width : Screen.height;
+        var width = Screen.height * Mathf.Min(textureAspect, screenAspect);
         return input / width;
     }
 

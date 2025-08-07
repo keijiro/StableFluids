@@ -57,7 +57,7 @@ void Advect(uint2 tid : SV_DispatchThreadID)
     W_out.GetDimensions(dim.x, dim.y);
 
     float2 uv = (tid + 0.5) / dim;
-    float2 duv = U_in[tid] * float2((float)dim.y / dim.x, 1) * DeltaTime;
+    float2 duv = U_in[tid] * float2(1, (float)dim.x / dim.y) * DeltaTime;
 
     W_out[tid] = U_in.SampleLevel(samplerU_in, uv - duv, 0);
 }
@@ -69,7 +69,7 @@ void Force(uint2 tid : SV_DispatchThreadID)
     uint2 dim;
     W_out.GetDimensions(dim.x, dim.y);
 
-    float2 pos = (tid + 0.5 - dim * 0.5) / dim.y;
+    float2 pos = (tid + 0.5 - dim * 0.5) / dim.x;
     float amp = exp(-ForceExponent * distance(ForceOrigin, pos));
 
     W_out[tid] = W_in[tid] + ForceVector * amp;
@@ -83,7 +83,7 @@ void PSetup(uint2 tid : SV_DispatchThreadID)
     W_in.GetDimensions(dim.x, dim.y);
 
     DivW_out[tid] = (W_in[tid + int2(1, 0)].x - W_in[tid - int2(1, 0)].x +
-                     W_in[tid + int2(0, 1)].y - W_in[tid - int2(0, 1)].y) * dim.y / 2;
+                     W_in[tid + int2(0, 1)].y - W_in[tid - int2(0, 1)].y) * dim.x / 2;
 
     P_out[tid] = 0;
 }
@@ -102,7 +102,7 @@ void PFinish(uint2 tid : SV_DispatchThreadID)
     float P3 = P_in[max(tid - int2(0, 1), 1)];
     float P4 = P_in[min(tid + int2(0, 1), dim - 2)];
 
-    float2 u = W_in[tid] - float2(P2 - P1, P4 - P3) * dim.y / 2;
+    float2 u = W_in[tid] - float2(P2 - P1, P4 - P3) * dim.x / 2;
 
     U_out[tid] = u;
 

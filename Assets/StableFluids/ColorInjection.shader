@@ -24,7 +24,7 @@ Shader "Hidden/StableFluids/ColorInjection"
 
         // Injection point
         float2 pos = i.uv - 0.5;
-        pos.x *= _MainTex_TexelSize.y * _MainTex_TexelSize.z;
+        pos.y *= _MainTex_TexelSize.x * _MainTex_TexelSize.w;
 
         // Injection intensity based on the distance from the origin
         float alpha = 100 * exp(-_Exponent * distance(_Origin, pos));

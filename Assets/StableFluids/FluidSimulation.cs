@@ -62,7 +62,7 @@ public sealed class FluidSimulation : IDisposable
 
     public void PreStep(float deltaTime)
     {
-        var dx = 1.0f / Resolution.y;
+        var dx = 1.0f / Resolution.x;
 
         _compute.SetFloat(PropID.Time, Time.time);
         _compute.SetFloat(PropID.DeltaTime, deltaTime);
@@ -93,7 +93,7 @@ public sealed class FluidSimulation : IDisposable
 
     public void PostStep(float deltaTime)
     {
-        var dx = 1.0f / Resolution.y;
+        var dx = 1.0f / Resolution.x;
 
         // Projection
         _compute.SetTexture(Kernels.PSetup, PropID.W_in, _buffers.v3);
