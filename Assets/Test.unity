@@ -308,6 +308,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2103099141}
   - component: {fileID: 2103099142}
+  - component: {fileID: 2103099143}
   m_Layer: 0
   m_Name: Simulation
   m_TagString: Untagged
@@ -351,6 +352,18 @@ MonoBehaviour:
   _compute: {fileID: 7200000, guid: cd1f70f1f6b4beb45a02e1c088f0a109, type: 3}
   _advectionShader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
   _injectionShader: {fileID: 4800000, guid: 674367053d2794eedb3ce4ae9d2ac1a3, type: 3}
+--- !u!114 &2103099143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2103099139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67d8f5c68fb864fad8732a28eabc44c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
