@@ -155,7 +155,8 @@ half4 frag_pfinish(v2f_img i) : SV_Target
     bool bottom = ip.y == 0;
     bool top    = ip.y == (H - 1);
 
-    if (left || right || bottom || top) u = -u;
+    if (left || right) u.x = -u.x;
+    if (bottom || top) u.y = -u.y;
 
     return half4(u, 0, 1);
 }
