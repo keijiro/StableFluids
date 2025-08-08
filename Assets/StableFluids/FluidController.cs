@@ -31,7 +31,7 @@ public sealed class FluidController : MonoBehaviour
 
     #region Private members
 
-    FluidSimulation _simulation;
+    IFluidSimulation _simulation;
     FluidInputHandler _input;
     (Material advection, Material injection) _materials;
 
@@ -46,7 +46,8 @@ public sealed class FluidController : MonoBehaviour
         var w = Mathf.RoundToInt(_targetTexture.width * _simulationScale);
         var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
 
-        _simulation = new FluidSimulation(_compute, w, h);
+        // Force the pixel-shader backend for testing
+        _simulation = new FluidSimulationPS(w, h);
         _input = new FluidInputHandler(_targetTexture);
         _materials.advection = new Material(_advectionShader);
         _materials.injection = new Material(_injectionShader);

@@ -5,7 +5,16 @@ using PropID = StableFluids.FluidCompute.PropertyIds;
 
 namespace StableFluids {
 
-public sealed class FluidSimulation : IDisposable
+public interface IFluidSimulation : IDisposable
+{
+    float Viscosity { get; set; }
+    RenderTexture VelocityField { get; }
+    void PreStep(float deltaTime);
+    void PostStep(float deltaTime);
+    void ApplyPointForce(Vector2 origin, Vector2 force, float exponent);
+}
+
+public sealed class FluidSimulation : IDisposable, IFluidSimulation
 {
     #region Simulation parameters
 
