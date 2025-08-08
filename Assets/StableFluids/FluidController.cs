@@ -77,7 +77,7 @@ public sealed class FluidController : MonoBehaviour
     {
         // Simulation pre-step (advection + diffusion)
         _simulation.Viscosity = Viscosity;
-        _simulation.PreStep(Time.deltaTime);
+        _simulation.PreStep();
 
         // Apply forces based on input
         if (_input.RightPressed)
@@ -92,7 +92,7 @@ public sealed class FluidController : MonoBehaviour
         }
 
         // Simulation post-step (projection)
-        _simulation.PostStep(Time.deltaTime);
+        _simulation.PostStep();
     }
 
     void StepVisualization()
