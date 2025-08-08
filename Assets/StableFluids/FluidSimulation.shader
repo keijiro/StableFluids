@@ -1,4 +1,4 @@
-Shader "Hidden/StableFluids/PixelKernels"
+Shader "Hidden/StableFluids/FluidSimulation"
 {
     Properties
     {

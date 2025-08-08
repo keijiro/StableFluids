@@ -30,4 +30,24 @@ static class RTUtil
       => AllocateUav(width, height, RenderTextureFormat.ARGBHalf);
 }
 
+static class ShaderIDs
+{
+    public static readonly int TexWidth = Shader.PropertyToID("_TexWidth");
+    public static readonly int TexHeight = Shader.PropertyToID("_TexHeight");
+    public static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
+
+    public static readonly int X = Shader.PropertyToID("_X");
+    public static readonly int B = Shader.PropertyToID("_B");
+    public static readonly int Alpha = Shader.PropertyToID("_Alpha");
+    public static readonly int Beta = Shader.PropertyToID("_Beta");
+
+    public static readonly int MainTex = Shader.PropertyToID("_MainTex");
+    public static readonly int W = Shader.PropertyToID("_W");
+    public static readonly int P = Shader.PropertyToID("_P");
+
+    public static readonly int ForceOrigin = Shader.PropertyToID("_ForceOrigin");
+    public static readonly int ForceVector = Shader.PropertyToID("_ForceVector");
+    public static readonly int ForceExponent = Shader.PropertyToID("_ForceExponent");
+}
+
 } // namespace StableFluids

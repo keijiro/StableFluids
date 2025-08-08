@@ -1,150 +1,119 @@
 using System;
 using UnityEngine;
-using Kernels = StableFluids.FluidCompute.Kernels;
-using PropID = StableFluids.FluidCompute.PropertyIds;
 
 namespace StableFluids {
 
-public interface IFluidSimulation : IDisposable
-{
-    float Viscosity { get; set; }
-    RenderTexture VelocityField { get; }
-    void PreStep(float deltaTime);
-    void PostStep(float deltaTime);
-    void ApplyPointForce(Vector2 origin, Vector2 force, float exponent);
-}
-
-public sealed class FluidSimulation : IDisposable, IFluidSimulation
+public sealed class FluidSimulation : IDisposable
 {
     #region Simulation parameters
-
     public float Viscosity { get; set; } = 1e-6f;
-
     #endregion
 
     #region Read-only properties
-
-    public RenderTexture VelocityField => _buffers.v1;
-
+    public RenderTexture VelocityField => _v1;
     #endregion
 
     #region Private members
+    readonly Vector2Int _resolution;
 
-    readonly ComputeShader _compute;
+    RenderTexture _v1, _v2, _v3, _p1, _p2, _divW;
 
-    Vector2Int _threadCount;
-    Vector2Int Resolution => _threadCount * 8;
-
-    (RenderTexture v1,
-     RenderTexture v2,
-     RenderTexture v3,
-     RenderTexture p1,
-     RenderTexture p2) _buffers;
-
+    Material _mat;
     #endregion
 
     #region Constructor and Dispose
-
-    public FluidSimulation(ComputeShader compute, int width, int height)
+    public FluidSimulation(int width, int height, Shader pixelKernelsShader)
     {
-        _compute = compute;
-        _threadCount = new Vector2Int(width + 7, height + 7) / 8;
-        _buffers.v1 = RTUtil.AllocateUavRg(Resolution);
-        _buffers.v2 = RTUtil.AllocateUavRg(Resolution);
-        _buffers.v3 = RTUtil.AllocateUavRg(Resolution);
-        _buffers.p1 = RTUtil.AllocateUavR(Resolution);
-        _buffers.p2 = RTUtil.AllocateUavR(Resolution);
+        _resolution = new Vector2Int(width, height);
+
+        _v1 = RTUtil.AllocateUavRg(_resolution);
+        _v2 = RTUtil.AllocateUavRg(_resolution);
+        _v3 = RTUtil.AllocateUavRg(_resolution);
+        _p1 = RTUtil.AllocateUavR(_resolution);
+        _p2 = RTUtil.AllocateUavR(_resolution);
+        _divW = RTUtil.AllocateUavR(_resolution);
+
+        _mat = new Material(pixelKernelsShader);
+        _mat.SetInt(ShaderIDs.TexWidth, width);
+        _mat.SetInt(ShaderIDs.TexHeight, height);
     }
 
     public void Dispose()
     {
-        if (_buffers.v1 != null) UnityEngine.Object.Destroy(_buffers.v1);
-        if (_buffers.v2 != null) UnityEngine.Object.Destroy(_buffers.v2);
-        if (_buffers.v3 != null) UnityEngine.Object.Destroy(_buffers.v3);
-        if (_buffers.p1 != null) UnityEngine.Object.Destroy(_buffers.p1);
-        if (_buffers.p2 != null) UnityEngine.Object.Destroy(_buffers.p2);
-    }
+        UnityEngine.Object.Destroy(_v1);
+        UnityEngine.Object.Destroy(_v2);
+        UnityEngine.Object.Destroy(_v3);
+        UnityEngine.Object.Destroy(_p1);
+        UnityEngine.Object.Destroy(_p2);
+        UnityEngine.Object.Destroy(_divW);
 
+        UnityEngine.Object.Destroy(_mat);
+    }
     #endregion
 
     #region Simulation methods
-
     public void PreStep(float deltaTime)
     {
-        var dx = 1.0f / Resolution.x;
+        // Advection U -> W (v1 -> v2)
+        _mat.SetFloat(ShaderIDs.DeltaTime, deltaTime);
+        Graphics.Blit(_v1, _v2, _mat, 0);
 
-        _compute.SetFloat(PropID.Time, Time.time);
-        _compute.SetFloat(PropID.DeltaTime, deltaTime);
+        // Diffusion via Jacobi on vector field (pass 4)
+        var dx = 1.0f / _resolution.x;
+        var dif_alpha = dx * dx / (Mathf.Max(Viscosity, 1e-12f) * Mathf.Max(deltaTime, 1e-12f));
+        var beta = 4 + dif_alpha;
 
-        // Advection
-        _compute.SetTexture(Kernels.Advect, PropID.U_in, _buffers.v1);
-        _compute.SetTexture(Kernels.Advect, PropID.W_out, _buffers.v2);
-        _compute.Dispatch(Kernels.Advect, _threadCount);
+        Graphics.CopyTexture(_v2, _v1); // B2_in = v1
 
-        // Diffusion
-        var dif_alpha = dx * dx / (Viscosity * deltaTime);
-        _compute.SetFloat(PropID.Alpha, dif_alpha);
-        _compute.SetFloat(PropID.Beta, 4 + dif_alpha);
-        Graphics.CopyTexture(_buffers.v2, _buffers.v1);
-        _compute.SetTexture(Kernels.Jacobi2, PropID.B2_in, _buffers.v1);
-
+        // Iterate: X2_in/out over v2 <-> v3
         for (var i = 0; i < 20; i++)
         {
-            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_in, _buffers.v2);
-            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_out, _buffers.v3);
-            _compute.Dispatch(Kernels.Jacobi2, _threadCount);
+            _mat.SetTexture(ShaderIDs.X, _v2);
+            _mat.SetTexture(ShaderIDs.B, _v1);
+            _mat.SetFloat(ShaderIDs.Alpha, dif_alpha);
+            _mat.SetFloat(ShaderIDs.Beta, beta);
+            Graphics.Blit(_v2, _v3, _mat, 4);
 
-            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_in, _buffers.v3);
-            _compute.SetTexture(Kernels.Jacobi2, PropID.X2_out, _buffers.v2);
-            _compute.Dispatch(Kernels.Jacobi2, _threadCount);
+            // swap v2/v3
+            var tmp = _v2; _v2 = _v3; _v3 = tmp;
         }
     }
 
     public void PostStep(float deltaTime)
     {
-        var dx = 1.0f / Resolution.x;
+        // PSetup: compute divergence of W_in (v3) to divW and clear p1 (pass 2)
+        _mat.SetTexture(ShaderIDs.MainTex, _v3);
+        Graphics.Blit(_v3, _divW, _mat, 2);
+        Graphics.Blit(Texture2D.blackTexture, _p1);
 
-        // Projection
-        _compute.SetTexture(Kernels.PSetup, PropID.W_in, _buffers.v3);
-        _compute.SetTexture(Kernels.PSetup, PropID.DivW_out, _buffers.v2);
-        _compute.SetTexture(Kernels.PSetup, PropID.P_out, _buffers.p1);
-        _compute.Dispatch(Kernels.PSetup, _threadCount);
-
-        _compute.SetFloat(PropID.Alpha, -dx * dx);
-        _compute.SetFloat(PropID.Beta, 4);
-        _compute.SetTexture(Kernels.Jacobi1, PropID.B1_in, _buffers.v2);
-
+        // Jacobi on scalar field for pressure
+        var dx = 1.0f / _resolution.x;
+        _mat.SetFloat(ShaderIDs.Alpha, -dx * dx);
+        _mat.SetFloat(ShaderIDs.Beta, 4);
         for (var i = 0; i < 20; i++)
         {
-            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_in, _buffers.p1);
-            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_out, _buffers.p2);
-            _compute.Dispatch(Kernels.Jacobi1, _threadCount);
-
-            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_in, _buffers.p2);
-            _compute.SetTexture(Kernels.Jacobi1, PropID.X1_out, _buffers.p1);
-            _compute.Dispatch(Kernels.Jacobi1, _threadCount);
+            _mat.SetTexture(ShaderIDs.X, _p1);
+            _mat.SetTexture(ShaderIDs.B, _divW);
+            Graphics.Blit(_p1, _p2, _mat, 3);
+            var tmp = _p1; _p1 = _p2; _p2 = tmp;
         }
 
-        _compute.SetTexture(Kernels.PFinish, PropID.W_in, _buffers.v3);
-        _compute.SetTexture(Kernels.PFinish, PropID.P_in, _buffers.p1);
-        _compute.SetTexture(Kernels.PFinish, PropID.U_out, _buffers.v1);
-        _compute.Dispatch(Kernels.PFinish, _threadCount);
+        // PFinish (pass 5): subtract pressure gradient to get divergence-free field U_out (v1)
+        _mat.SetTexture(ShaderIDs.W, _v3);
+        _mat.SetTexture(ShaderIDs.P, _p1);
+        Graphics.Blit(_v3, _v1, _mat, 5);
     }
-
     #endregion
 
     #region Force methods
-
     public void ApplyPointForce(Vector2 origin, Vector2 force, float exponent)
     {
-        _compute.SetVector(PropID.ForceOrigin, origin);
-        _compute.SetFloat(PropID.ForceExponent, exponent);
-        _compute.SetVector(PropID.ForceVector, force);
-        _compute.SetTexture(Kernels.Force, PropID.W_in, _buffers.v2);
-        _compute.SetTexture(Kernels.Force, PropID.W_out, _buffers.v3);
-        _compute.Dispatch(Kernels.Force, _threadCount);
+        _mat.SetVector(ShaderIDs.ForceOrigin, origin);
+        _mat.SetFloat(ShaderIDs.ForceExponent, exponent);
+        _mat.SetVector(ShaderIDs.ForceVector, force);
+        _mat.SetTexture(ShaderIDs.MainTex, _v2);
+        Graphics.Blit(_v2, _v3, _mat, 1);
     }
-
     #endregion
 }
 

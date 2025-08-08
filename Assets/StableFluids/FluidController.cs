@@ -23,7 +23,7 @@ public sealed class FluidController : MonoBehaviour
 
     #region Project asset references
 
-    [SerializeField, HideInInspector] ComputeShader _compute = null;
+    [SerializeField, HideInInspector] Shader _kernelsShader = null;
     [SerializeField, HideInInspector] Shader _advectionShader = null;
     [SerializeField, HideInInspector] Shader _injectionShader = null;
 
@@ -31,7 +31,7 @@ public sealed class FluidController : MonoBehaviour
 
     #region Private members
 
-    IFluidSimulation _simulation;
+    FluidSimulation _simulation;
     FluidInputHandler _input;
     (Material advection, Material injection) _materials;
 
@@ -46,8 +46,7 @@ public sealed class FluidController : MonoBehaviour
         var w = Mathf.RoundToInt(_targetTexture.width * _simulationScale);
         var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
 
-        // Force the pixel-shader backend for testing
-        _simulation = new FluidSimulationPS(w, h);
+        _simulation = new FluidSimulation(w, h, _kernelsShader);
         _input = new FluidInputHandler(_targetTexture);
         _materials.advection = new Material(_advectionShader);
         _materials.injection = new Material(_injectionShader);
