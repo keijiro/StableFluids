@@ -31,12 +31,12 @@ public sealed class FluidSimulation : IDisposable
     {
         _resolution = new Vector2Int(width, height);
 
-        _v1 = RTUtil.AllocateUavRg(_resolution);
-        _v2 = RTUtil.AllocateUavRg(_resolution);
-        _v3 = RTUtil.AllocateUavRg(_resolution);
-        _p1 = RTUtil.AllocateUavR(_resolution);
-        _p2 = RTUtil.AllocateUavR(_resolution);
-        _divW = RTUtil.AllocateUavR(_resolution);
+        _v1 = RTUtil.AllocateRGHalf(_resolution);
+        _v2 = RTUtil.AllocateRGHalf(_resolution);
+        _v3 = RTUtil.AllocateRGHalf(_resolution);
+        _p1 = RTUtil.AllocateRHalf(_resolution);
+        _p2 = RTUtil.AllocateRHalf(_resolution);
+        _divW = RTUtil.AllocateRHalf(_resolution);
 
         _mat = new Material(pixelKernelsShader);
         _mat.SetInt(ShaderIDs.TexWidth, width);

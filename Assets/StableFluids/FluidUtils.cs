@@ -11,23 +11,19 @@ static class ComputeShaderExtensions
 
 static class RTUtil
 {
-    public static RenderTexture AllocateUav
+    public static RenderTexture Allocate
       (int width, int height, RenderTextureFormat format)
     {
         var rt = new RenderTexture(width, height, 0, format);
-        rt.enableRandomWrite = true;
         rt.Create();
         return rt;
     }
 
-    public static RenderTexture AllocateUavR(Vector2Int dims)
-      => AllocateUav(dims.x, dims.y, RenderTextureFormat.RHalf);
+    public static RenderTexture AllocateRHalf(Vector2Int dims)
+      => Allocate(dims.x, dims.y, RenderTextureFormat.RHalf);
 
-    public static RenderTexture AllocateUavRg(Vector2Int dims)
-      => AllocateUav(dims.x, dims.y, RenderTextureFormat.RGHalf);
-
-    public static RenderTexture AllocateUavRgba(int width, int height)
-      => AllocateUav(width, height, RenderTextureFormat.ARGBHalf);
+    public static RenderTexture AllocateRGHalf(Vector2Int dims)
+      => Allocate(dims.x, dims.y, RenderTextureFormat.RGHalf);
 }
 
 static class ShaderIDs
