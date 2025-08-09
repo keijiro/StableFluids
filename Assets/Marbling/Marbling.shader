@@ -34,6 +34,11 @@ void VertexProcedural(uint vertexID : SV_VertexID,
     float2 position = float2((vertexID << 1) & 2, vertexID & 2) * 2.0 - 1.0;
     positionCS = float4(position.x, -position.y, 0, 1);
     uv = position * 0.5 + 0.5;
+
+    // Fix UV coordinate inversion for OpenGL/WebGL platforms
+    #if !UNITY_UV_STARTS_AT_TOP
+    uv.y = 1.0 - uv.y;
+    #endif
 }
 
 half4 FragmentInjection(float4 positionCS : SV_POSITION,
