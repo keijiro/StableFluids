@@ -63,7 +63,6 @@ public sealed class FluidSimulation : IDisposable
         var dt = Time.deltaTime;
 
         // Advection U -> W (v1 -> v2)
-        _mat.SetFloat(ShaderIDs.DeltaTime, dt);
         Graphics.Blit(_v1, _v2, _mat, 0);
 
         // Diffusion via Jacobi on vector field (pass 4)

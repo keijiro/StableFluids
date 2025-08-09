@@ -24,7 +24,6 @@ Texture2D _X;
 Texture2D _B;
 
 int _TexWidth, _TexHeight;
-float _DeltaTime;
 float _Alpha, _Beta;
 float2 _ForceOrigin, _ForceVector;
 float _ForceExponent;
@@ -47,7 +46,7 @@ half4 frag_advect(v2f_img i) : SV_Target
     float2 vel = _MainTex[PixelCoord(i.uv)].xy;
     vel.y *= (float)_TexWidth / _TexHeight;
 
-    float2 uv_prev = i.uv - vel * _DeltaTime;
+    float2 uv_prev = i.uv - vel * unity_DeltaTime.x;
     float2 adv = _MainTex.SampleLevel(sampler_MainTex, uv_prev, 0).xy;
 
     return half4(adv, 0, 1);

@@ -2,13 +2,6 @@ using UnityEngine;
 
 namespace StableFluids {
 
-static class ComputeShaderExtensions
-{
-    public static void Dispatch
-      (this ComputeShader compute, int kernelIndex, Vector2Int threadGroups)
-        => compute.Dispatch(kernelIndex, threadGroups.x, threadGroups.y, 1);
-}
-
 static class RTUtil
 {
     public static RenderTexture Allocate
@@ -30,7 +23,6 @@ static class ShaderIDs
 {
     public static readonly int TexWidth = Shader.PropertyToID("_TexWidth");
     public static readonly int TexHeight = Shader.PropertyToID("_TexHeight");
-    public static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
 
     public static readonly int X = Shader.PropertyToID("_X");
     public static readonly int B = Shader.PropertyToID("_B");
