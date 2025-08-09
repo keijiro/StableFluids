@@ -9,12 +9,14 @@ Shader "Hidden/StableFluids/FluidSimulation"
         _B ("", 2D) = ""
     }
 
-    CGINCLUDE
+HLSLINCLUDE
 
-#include "UnityCG.cginc"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+
+// Unity built-in time uniform
+float4 unity_DeltaTime; // dt, 1/dt, smoothdt, 1/smoothdt
 
 // Uniforms
-
 Texture2D _MainTex;
 SamplerState sampler_MainTex;
 
@@ -29,7 +31,6 @@ float2 _ForceOrigin, _ForceVector;
 float _ForceExponent;
 
 // Common helpers
-
 int2 PixelCoord(float2 uv)
 {
     return int2(uv * float2(_TexWidth, _TexHeight));
@@ -40,35 +41,48 @@ int2 ClampInner(int2 p)
     return clamp(p, int2(1, 1), int2(_TexWidth - 2, _TexHeight - 2));
 }
 
-// Pass 0: Velocity Advection
-half4 frag_advect(v2f_img i) : SV_Target
+// Procedural vertex shader
+void VertexProcedural(uint vertexID : SV_VertexID,
+                      out float4 positionCS : SV_POSITION,
+                      out float2 uv : TEXCOORD0)
 {
-    float2 vel = _MainTex[PixelCoord(i.uv)].xy;
+    float2 position = float2((vertexID << 1) & 2, vertexID & 2) * 2.0 - 1.0;
+    positionCS = float4(position.x, -position.y, 0, 1);
+    uv = position * 0.5 + 0.5;
+}
+
+// Pass 0: Velocity Advection
+half4 FragmentAdvect(float4 positionCS : SV_POSITION,
+                     float2 uv : TEXCOORD0) : SV_Target
+{
+    float2 vel = _MainTex[PixelCoord(uv)].xy;
     vel.y *= (float)_TexWidth / _TexHeight;
 
-    float2 uv_prev = i.uv - vel * unity_DeltaTime.x;
+    float2 uv_prev = uv - vel * unity_DeltaTime.x;
     float2 adv = _MainTex.SampleLevel(sampler_MainTex, uv_prev, 0).xy;
 
     return half4(adv, 0, 1);
 }
 
 // Pass 1: Add Force
-half4 frag_force(v2f_img i) : SV_Target
+half4 FragmentForce(float4 positionCS : SV_POSITION,
+                    float2 uv : TEXCOORD0) : SV_Target
 {
-    float2 pos = i.uv - 0.5;
+    float2 pos = uv - 0.5;
     pos.y *= (float)_TexHeight / _TexWidth;
 
     float amp = exp(-_ForceExponent * distance(_ForceOrigin, pos));
 
-    float2 v = _MainTex[PixelCoord(i.uv)].xy + _ForceVector * amp;
+    float2 v = _MainTex[PixelCoord(uv)].xy + _ForceVector * amp;
 
     return half4(v, 0, 1);
 }
 
 // Pass 2: Projection setup
-half4 frag_psetup(v2f_img i) : SV_Target
+half4 FragmentPSetup(float4 positionCS : SV_POSITION,
+                     float2 uv : TEXCOORD0) : SV_Target
 {
-    int2 ip = PixelCoord(i.uv);
+    int2 ip = PixelCoord(uv);
 
     int2 pL = ClampInner(ip - int2(1, 0));
     int2 pR = ClampInner(ip + int2(1, 0));
@@ -86,9 +100,10 @@ half4 frag_psetup(v2f_img i) : SV_Target
 }
 
 // Pass 3: Jacobi (scalar)
-half4 frag_jacobi1(v2f_img i) : SV_Target
+half4 FragmentJacobi1(float4 positionCS : SV_POSITION,
+                      float2 uv : TEXCOORD0) : SV_Target
 {
-    int2 ip = PixelCoord(i.uv);
+    int2 ip = PixelCoord(uv);
 
     int2 pL = ClampInner(ip - int2(1, 0));
     int2 pR = ClampInner(ip + int2(1, 0));
@@ -108,9 +123,10 @@ half4 frag_jacobi1(v2f_img i) : SV_Target
 }
 
 // Pass 4: Jacobi (vector)
-half4 frag_jacobi2(v2f_img i) : SV_Target
+half4 FragmentJacobi2(float4 positionCS : SV_POSITION,
+                      float2 uv : TEXCOORD0) : SV_Target
 {
-    int2 ip = PixelCoord(i.uv);
+    int2 ip = PixelCoord(uv);
 
     int2 pL = ClampInner(ip - int2(1, 0));
     int2 pR = ClampInner(ip + int2(1, 0));
@@ -130,9 +146,10 @@ half4 frag_jacobi2(v2f_img i) : SV_Target
 }
 
 // Pass 5: Projection finish
-half4 frag_pfinish(v2f_img i) : SV_Target
+half4 FragmentPFinish(float4 positionCS : SV_POSITION,
+                      float2 uv : TEXCOORD0) : SV_Target
 {
-    int2 ip = PixelCoord(i.uv);
+    int2 ip = PixelCoord(uv);
     int W = _TexWidth, H = _TexHeight;
 
     int2 pL = ClampInner(ip - int2(1, 0));
@@ -160,7 +177,7 @@ half4 frag_pfinish(v2f_img i) : SV_Target
     return half4(u, 0, 1);
 }
 
-    ENDCG
+ENDHLSL
 
     SubShader
     {
@@ -169,56 +186,50 @@ half4 frag_pfinish(v2f_img i) : SV_Target
         // 0: Advect
         Pass
         {
-            CGPROGRAM
-            #pragma target 3.5
-            #pragma vertex vert_img
-            #pragma fragment frag_advect
-            ENDCG
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentAdvect
+            ENDHLSL
         }
         // 1: Force
         Pass
         {
-            CGPROGRAM
-            #pragma target 3.5
-            #pragma vertex vert_img
-            #pragma fragment frag_force
-            ENDCG
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentForce
+            ENDHLSL
         }
         // 2: PSetup
         Pass
         {
-            CGPROGRAM
-            #pragma target 3.5
-            #pragma vertex vert_img
-            #pragma fragment frag_psetup
-            ENDCG
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentPSetup
+            ENDHLSL
         }
         // 3: Jacobi1
         Pass
         {
-            CGPROGRAM
-            #pragma target 3.5
-            #pragma vertex vert_img
-            #pragma fragment frag_jacobi1
-            ENDCG
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentJacobi1
+            ENDHLSL
         }
         // 4: Jacobi2
         Pass
         {
-            CGPROGRAM
-            #pragma target 3.5
-            #pragma vertex vert_img
-            #pragma fragment frag_jacobi2
-            ENDCG
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentJacobi2
+            ENDHLSL
         }
         // 5: PFinish
         Pass
         {
-            CGPROGRAM
-            #pragma target 3.5
-            #pragma vertex vert_img
-            #pragma fragment frag_pfinish
-            ENDCG
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentPFinish
+            ENDHLSL
         }
     }
 }
