@@ -101,8 +101,7 @@ public sealed class MarblingController : MonoBehaviour
             _mateiral.color = Color.HSVToRGB(Time.time % 1, 1, 1);
             _mateiral.SetVector("_Origin", _input.Position);
             _mateiral.SetFloat("_Falloff", PointFalloff);
-            _mateiral.SetPass(0); // Pass 0: Color Injection
-            Graphics.Blit(_targetTexture, temp, _mateiral);
+            Graphics.Blit(_targetTexture, temp, _mateiral, 0); // Pass 0: Color Injection
         }
         else
         {
@@ -111,8 +110,7 @@ public sealed class MarblingController : MonoBehaviour
 
         // Color advection
         _mateiral.SetTexture("_VelocityField", _simulation.VelocityField);
-        _mateiral.SetPass(1); // Pass 1: Fluid Advection
-        Graphics.Blit(temp, _targetTexture, _mateiral);
+        Graphics.Blit(temp, _targetTexture, _mateiral, 1); // Pass 1: Fluid Advection
 
         RenderTexture.ReleaseTemporary(temp);
     }
