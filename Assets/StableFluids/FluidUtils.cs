@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 
 namespace StableFluids {
 
@@ -17,6 +18,16 @@ static class RTUtil
 
     public static RenderTexture AllocateRGHalf(Vector2Int dims)
       => Allocate(dims.x, dims.y, RenderTextureFormat.RGHalf);
+
+    public static RenderTexture GetTemporaryCompatible(RenderTexture source)
+    {
+        var descriptor = source.descriptor;
+        descriptor.graphicsFormat = SystemInfo.GetCompatibleFormat(
+            descriptor.graphicsFormat,
+            GraphicsFormatUsage.Render
+        );
+        return RenderTexture.GetTemporary(descriptor);
+    }
 }
 
 static class ShaderIDs

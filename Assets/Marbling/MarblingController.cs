@@ -93,7 +93,7 @@ public sealed class MarblingController : MonoBehaviour
 
     void StepVisualization()
     {
-        var temp = RenderTexture.GetTemporary(_targetTexture.descriptor);
+        var temp = RTUtil.GetTemporaryCompatible(_targetTexture);
 
         // Dye injection with right-button input
         if (_input.RightPressed)
