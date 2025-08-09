@@ -7,8 +7,7 @@ MonoImporter:
   - _targetTexture: {instanceID: 0}
   - _initialImage: {instanceID: 0}
   - _kernelsShader: {fileID: 4800000, guid: 636ac93388c5343c894f80bf0fc605f2, type: 3}
-  - _advectionShader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
-  - _injectionShader: {fileID: 4800000, guid: 674367053d2794eedb3ce4ae9d2ac1a3, type: 3}
+  - _marblingShader: {fileID: 4800000, guid: ae8ec69a42aab44e58c38501811bda46, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

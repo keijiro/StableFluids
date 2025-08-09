@@ -113,10 +113,10 @@ public sealed class FluidSimulation : IDisposable
 
     #region Force methods
 
-    public void ApplyPointForce(Vector2 origin, Vector2 force, float exponent)
+    public void ApplyPointForce(Vector2 origin, Vector2 force, float falloff)
     {
         _mat.SetVector(ShaderIDs.ForceOrigin, origin);
-        _mat.SetFloat(ShaderIDs.ForceExponent, exponent);
+        _mat.SetFloat(ShaderIDs.ForceExponent, falloff);
         _mat.SetVector(ShaderIDs.ForceVector, force);
         _mat.SetTexture(ShaderIDs.MainTex, _v2);
         Graphics.Blit(_v2, _v3, _mat, 1);

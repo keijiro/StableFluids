@@ -1,15 +1,14 @@
-﻿using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine;
 
-namespace StableFluids {
+namespace StableFluids.Marbling {
 
-public sealed class FluidController : MonoBehaviour
+public sealed class MarblingController : MonoBehaviour
 {
     #region Public properties
 
-    [field:SerializeField] float Viscosity { get; set; } = 1e-6f;
-    [field:SerializeField] float Force { get; set; } = 300;
-    [field:SerializeField] float Exponent { get; set; } = 200;
+    [field:SerializeField] public float Viscosity { get; set; } = 1e-6f;
+    [field:SerializeField] public float PointForce { get; set; } = 300;
+    [field:SerializeField] public float PointFalloff { get; set; } = 200;
 
     #endregion
 
@@ -24,16 +23,15 @@ public sealed class FluidController : MonoBehaviour
     #region Project asset references
 
     [SerializeField, HideInInspector] Shader _kernelsShader = null;
-    [SerializeField, HideInInspector] Shader _advectionShader = null;
-    [SerializeField, HideInInspector] Shader _injectionShader = null;
+    [SerializeField, HideInInspector] Shader _marblingShader = null;
 
     #endregion
 
     #region Private members
 
     FluidSimulation _simulation;
-    FluidInputHandler _input;
-    (Material advection, Material injection) _materials;
+    MarblingInputHandler _input;
+    Material _mateiral;
 
     #endregion
 
@@ -47,9 +45,8 @@ public sealed class FluidController : MonoBehaviour
         var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
 
         _simulation = new FluidSimulation(w, h, _kernelsShader);
-        _input = new FluidInputHandler(_targetTexture);
-        _materials.advection = new Material(_advectionShader);
-        _materials.injection = new Material(_injectionShader);
+        _input = new MarblingInputHandler(_targetTexture);
+        _mateiral = new Material(_marblingShader);
 
         if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
     }
@@ -57,8 +54,7 @@ public sealed class FluidController : MonoBehaviour
     void OnDestroy()
     {
         _simulation?.Dispose();
-        Destroy(_materials.advection);
-        Destroy(_materials.injection);
+        Destroy(_mateiral);
     }
 
     void Update()
@@ -82,13 +78,13 @@ public sealed class FluidController : MonoBehaviour
         // Apply forces based on input
         if (_input.RightPressed)
         {
-            var randomForce = Random.insideUnitCircle * Force * 0.025f;
-            _simulation.ApplyPointForce(_input.Position, randomForce, Exponent);
+            var force = Random.insideUnitCircle * PointForce * 0.025f;
+            _simulation.ApplyPointForce(_input.Position, force, PointFalloff);
         }
         else if (_input.LeftPressed)
         {
-            var dragForce = _input.Velocity * Force;
-            _simulation.ApplyPointForce(_input.Position, dragForce, Exponent);
+            var force = _input.Velocity * PointForce;
+            _simulation.ApplyPointForce(_input.Position, force, PointFalloff);
         }
 
         // Simulation post-step (projection)
@@ -102,10 +98,11 @@ public sealed class FluidController : MonoBehaviour
         // Dye injection with right-button input
         if (_input.RightPressed)
         {
-            _materials.injection.color = Color.HSVToRGB(Time.time % 1, 1, 1);
-            _materials.injection.SetVector("_Origin", _input.Position);
-            _materials.injection.SetFloat("_Exponent", Exponent);
-            Graphics.Blit(_targetTexture, temp, _materials.injection);
+            _mateiral.color = Color.HSVToRGB(Time.time % 1, 1, 1);
+            _mateiral.SetVector("_Origin", _input.Position);
+            _mateiral.SetFloat("_Falloff", PointFalloff);
+            _mateiral.SetPass(0); // Pass 0: Color Injection
+            Graphics.Blit(_targetTexture, temp, _mateiral);
         }
         else
         {
@@ -113,8 +110,9 @@ public sealed class FluidController : MonoBehaviour
         }
 
         // Color advection
-        _materials.advection.SetTexture("_VelocityField", _simulation.VelocityField);
-        Graphics.Blit(temp, _targetTexture, _materials.advection);
+        _mateiral.SetTexture("_VelocityField", _simulation.VelocityField);
+        _mateiral.SetPass(1); // Pass 1: Fluid Advection
+        Graphics.Blit(temp, _targetTexture, _mateiral);
 
         RenderTexture.ReleaseTemporary(temp);
     }
@@ -122,4 +120,4 @@ public sealed class FluidController : MonoBehaviour
     #endregion
 }
 
-} // namespace StableFluids
+} // namespace StableFluids.Marbling

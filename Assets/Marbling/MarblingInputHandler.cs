@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace StableFluids {
+namespace StableFluids.Marbling {
 
-public sealed class FluidInputHandler
+public sealed class MarblingInputHandler
 {
     #region Public properties
 
@@ -23,7 +23,7 @@ public sealed class FluidInputHandler
 
     #region Public methods
 
-    public FluidInputHandler(RenderTexture targetTexture)
+    public MarblingInputHandler(RenderTexture targetTexture)
       => _targetTexture = targetTexture;
 
     public void UpdateTargetTexture(RenderTexture targetTexture)
@@ -109,4 +109,4 @@ public sealed class FluidInputHandler
     #endregion
 }
 
-} // namespace StableFluids
+} // namespace StableFluids.Marbling

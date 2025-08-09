@@ -170,6 +170,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1268436871
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1268436873}
+  - component: {fileID: 1268436872}
+  m_Layer: 0
+  m_Name: Marbling Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1268436872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1268436871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68b35f6f5dea6274db0eda640e08abc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <Viscosity>k__BackingField: 0.000001
+  <Force>k__BackingField: 300
+  <Exponent>k__BackingField: 200
+  _targetTexture: {fileID: 8400000, guid: 7350661a73f484d0284eb5698aeaad31, type: 2}
+  _simulationScale: 0.5
+  _initialImage: {fileID: 2800000, guid: ded36cca018f2e741aa6a4c55495a7f0, type: 3}
+  _kernelsShader: {fileID: 4800000, guid: 636ac93388c5343c894f80bf0fc605f2, type: 3}
+  _marblingShader: {fileID: 4800000, guid: ae8ec69a42aab44e58c38501811bda46, type: 3}
+--- !u!4 &1268436873
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1268436871}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1411473415
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,10 +359,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2103099141}
-  - component: {fileID: 2103099144}
   - component: {fileID: 2103099143}
   m_Layer: 0
-  m_Name: Simulation
+  m_Name: App Config
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -343,31 +394,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67d8f5c68fb864fad8732a28eabc44c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2103099144
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2103099139}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68b35f6f5dea6274db0eda640e08abc2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  <Viscosity>k__BackingField: 0.000001
-  <Force>k__BackingField: 300
-  <Exponent>k__BackingField: 200
-  _targetTexture: {fileID: 8400000, guid: 7350661a73f484d0284eb5698aeaad31, type: 2}
-  _simulationScale: 0.5
-  _initialImage: {fileID: 2800000, guid: ded36cca018f2e741aa6a4c55495a7f0, type: 3}
-  _kernelsShader: {fileID: 4800000, guid: 636ac93388c5343c894f80bf0fc605f2, type: 3}
-  _advectionShader: {fileID: 4800000, guid: 0486f5f9fa757fa49a5b9613050036fb, type: 3}
-  _injectionShader: {fileID: 4800000, guid: 674367053d2794eedb3ce4ae9d2ac1a3, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 2103099141}
   - {fileID: 231048557}
   - {fileID: 1411473419}
-  - {fileID: 2103099141}
+  - {fileID: 1268436873}
