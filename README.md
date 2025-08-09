@@ -8,7 +8,7 @@ This project is a straightforward GPU-based implementation of Jos Stam's
 
 [Stable Fluids]: https://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf
 
-[WebGL Demo]: https://keijiro.github.io/StableFluids
+[WebGL Demo](https://keijiro.github.io/StableFluids)
 
 ## System Requirements
 
