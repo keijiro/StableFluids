@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>StableFluids Demo</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main>
+      <div id="unity-container">
+        <div id="unity-loading"/></div>
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+      </div>
+      <script src="Build/StableFluids.loader.js"></script>
+      <script>
+        var canvas = document.querySelector("#unity-canvas");
+        var loading = document.getElementById("unity-loading");
+        function Progress(value) {
+          loading.innerHTML = "Loading... " + Math.round(value * 100) + "%";
+        }
+        var config = {
+          dataUrl: "Build/StableFluids.data.unityweb",
+          frameworkUrl: "Build/StableFluids.framework.js.unityweb",
+          codeUrl: "Build/StableFluids.wasm.unityweb",
+          companyName: "DefaultCompany",
+          productName: "StableFluids",
+          productVersion: "0.1"
+        };
+        createUnityInstance(canvas, config, Progress);
+      </script>
+      <h3>Stable Fluids Demo</h3>
+      <p>Go back to the <a href="https://github.com/keijiro/StableFluids">project page</a>.</p>
+    </main>
+  </body>
+</html>

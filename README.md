@@ -4,9 +4,11 @@
 ![gif](https://i.imgur.com/FJBiGbk.gif)
 
 This project is a straightforward GPU-based implementation of Jos Stam's
-[Stable Fluids] iin Unity.
+[Stable Fluids] in Unity.
 
-[Stable Fluids]: http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf
+[Stable Fluids]: https://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf
+
+[WebGL Demo]: https://keijiro.github.io/StableFluids
 
 ## System Requirements
 
@@ -15,6 +17,6 @@ This project is a straightforward GPU-based implementation of Jos Stam's
 
 ## References
 
-- [Stable Fluids, Jos Stam](http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf)
+- [Stable Fluids, Jos Stam](https://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf)
 - [Real-Time Fluid Dynamics for Games, Jos Stam](https://pdfs.semanticscholar.org/847f/819a4ea14bd789aca8bc88e85e906cfc657c.pdf)
-- [Fast Fluid Dynamics Simulation on the GPU, Mark J. Harris](http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html)
+- [Fast Fluid Dynamics Simulation on the GPU, Mark J. Harris](https://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html)
