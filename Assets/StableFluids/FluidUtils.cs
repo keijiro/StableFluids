@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 
 namespace StableFluids {
 
@@ -13,11 +14,31 @@ static class RTUtil
         return rt;
     }
 
+    public static RenderTexture AllocateCompatible
+      (int width, int height, GraphicsFormat requestedFormat)
+    {
+        var compatibleFormat = SystemInfo.GetCompatibleFormat(
+            requestedFormat,
+            GraphicsFormatUsage.Render
+        );
+
+        var descriptor = new RenderTextureDescriptor(width, height)
+        {
+            graphicsFormat = compatibleFormat,
+            depthBufferBits = 0,
+            msaaSamples = 1
+        };
+
+        var rt = new RenderTexture(descriptor);
+        rt.Create();
+        return rt;
+    }
+
     public static RenderTexture AllocateRHalf(Vector2Int dims)
-      => Allocate(dims.x, dims.y, RenderTextureFormat.RHalf);
+      => AllocateCompatible(dims.x, dims.y, GraphicsFormat.R16_SFloat);
 
     public static RenderTexture AllocateRGHalf(Vector2Int dims)
-      => Allocate(dims.x, dims.y, RenderTextureFormat.RGHalf);
+      => AllocateCompatible(dims.x, dims.y, GraphicsFormat.R16G16_SFloat);
 
     public static RenderTexture GetTemporaryCompatible(RenderTexture source)
     {

@@ -17,7 +17,7 @@ RenderTexture:
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthStencilFormat: 0
-  m_ColorFormat: 24
+  m_ColorFormat: 28
   m_MipMap: 0
   m_GenerateMips: 1
   m_SRGB: 0
