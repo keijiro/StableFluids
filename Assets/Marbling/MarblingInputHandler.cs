@@ -17,7 +17,7 @@ public sealed class MarblingInputHandler
     #region Private members
 
     Vector2 _previousInput;
-    RenderTexture _targetTexture;
+    float _targetAspectRatio;
     bool _wasInputActive;
 
     #endregion
@@ -25,121 +25,93 @@ public sealed class MarblingInputHandler
     #region Public methods
 
     public MarblingInputHandler(RenderTexture targetTexture)
-      => _targetTexture = targetTexture;
-
-    public void UpdateTargetTexture(RenderTexture targetTexture)
-      => _targetTexture = targetTexture;
+      => _targetAspectRatio = (float)targetTexture.width / targetTexture.height;
 
     public void Update()
     {
-        // Check for actual input from either device
-        var hasMouseInput = CheckMouseInput();
-        var hasTouchInput = CheckTouchInput();
-        
-        // Prioritize touch over mouse if both are active
-        if (hasTouchInput)
-            ApplyTouchInput();
-        else if (hasMouseInput)
-            ApplyMouseInput();
+        // Get input from touch or mouse (touch has priority)
+        var (hasInput, position, left, right) = GetActiveInput();
+
+        if (hasInput)
+            UpdateInputState(position, left, right);
         else
-            UpdateNoInput();
+            UpdateInputState(Vector2.zero, false, false);
     }
 
     #endregion
 
     #region Private methods
 
-    bool CheckMouseInput()
+    (bool hasInput, Vector2 position, bool left, bool right) GetActiveInput()
+    {
+        // Prioritize touch input for WebGL compatibility
+        var touchInput = GetTouchInput();
+        if (touchInput.hasInput) return touchInput;
+
+        var mouseInput = GetMouseInput();
+        if (mouseInput.hasInput) return mouseInput;
+
+        return (false, Vector2.zero, false, false);
+    }
+
+    (bool hasInput, Vector2 position, bool left, bool right) GetMouseInput()
     {
         var mouse = Mouse.current;
-        return mouse != null && 
-               (mouse.leftButton.isPressed || mouse.rightButton.isPressed);
-    }
-    
-    void ApplyMouseInput()
-    {
-        var mouse = Mouse.current;
-        if (mouse == null) return;
+        if (mouse == null) return (false, Vector2.zero, false, false);
 
-        var mousePos = mouse.position.ReadValue();
-        var position = GetNormalizedInputPosition(mousePos);
-        UpdateInputState
-          (position, mouse.leftButton.isPressed, mouse.rightButton.isPressed);
+        var left = mouse.leftButton.isPressed;
+        var right = mouse.rightButton.isPressed;
+
+        if (!left && !right) return (false, Vector2.zero, false, false);
+
+        var position = GetNormalizedInputPosition(mouse.position.ReadValue());
+        return (true, position, left, right);
     }
 
-    bool CheckTouchInput()
+    (bool hasInput, Vector2 position, bool left, bool right) GetTouchInput()
     {
         var touchscreen = Touchscreen.current;
-        if (touchscreen == null) return false;
-        
-        for (var i = 0; i < touchscreen.touches.Count; i++)
-            if (touchscreen.touches[i].isInProgress)
-                return true;
-        
-        return false;
-    }
-    
-    void ApplyTouchInput()
-    {
-        var touchscreen = Touchscreen.current;
-        if (touchscreen == null) return;
-
-        var touchCount = 0;
-        var averagePosition = Vector2.zero;
+        if (touchscreen == null) return (false, Vector2.zero, false, false);
 
         // Calculate average position of all active touches
-        for (var i = 0; i < touchscreen.touches.Count; i++)
+        var activeTouches = 0;
+        var sumPosition = Vector2.zero;
+
+        foreach (var touch in touchscreen.touches)
         {
-            var touch = touchscreen.touches[i];
-            if (touch.isInProgress)
-            {
-                averagePosition += touch.position.ReadValue();
-                touchCount++;
-            }
+            if (!touch.isInProgress) continue;
+            sumPosition += touch.position.ReadValue();
+            activeTouches++;
         }
 
-        if (touchCount == 0) return;
+        if (activeTouches == 0) return (false, Vector2.zero, false, false);
 
-        averagePosition /= touchCount;
-        // 1 touch = left, 2+ touches = right
-        UpdateInputState
-          (GetNormalizedInputPosition(averagePosition),
-           touchCount == 1, touchCount >= 2);
+        // Map touch count to button states: 1 touch = left, 2+ touches = right
+        var position = GetNormalizedInputPosition(sumPosition / activeTouches);
+        return (true, position, activeTouches == 1, activeTouches >= 2);
     }
 
-    // Fallback when no input devices are available
-    void UpdateNoInput()
-      => UpdateInputState(Vector2.zero, false, false);
-
-    // Update all input properties and calculate velocity
     void UpdateInputState(Vector2 position, bool leftPressed, bool rightPressed)
     {
         Position = position;
         LeftPressed = leftPressed;
         RightPressed = rightPressed;
-        
-        var isInputActive = leftPressed || rightPressed;
-        
-        // Reset velocity on first frame of input
-        if (isInputActive && !_wasInputActive)
-            Velocity = Vector2.zero;
-        else if (isInputActive)
-            Velocity = Position - _previousInput;
-        else
-            Velocity = Vector2.zero;
-        
-        _previousInput = Position;
-        _wasInputActive = isInputActive;
+
+        // Reset velocity on first frame of input to avoid large initial jumps
+        var isActive = leftPressed || rightPressed;
+        Velocity = isActive && _wasInputActive ? position - _previousInput : Vector2.zero;
+
+        _previousInput = position;
+        _wasInputActive = isActive;
     }
 
-    // Convert screen position to normalized coordinates with aspect ratio correction
     Vector2 GetNormalizedInputPosition(Vector2 screenPos)
     {
+        // Convert screen position to normalized coordinates with aspect ratio correction
         var screenAspect = (float)Screen.width / Screen.height;
-        var textureAspect = (float)_targetTexture.width / _targetTexture.height;
-        var input = screenPos - new Vector2(Screen.width, Screen.height) / 2;
-        var width = Screen.height * Mathf.Min(textureAspect, screenAspect);
-        return input / width;
+        var offset = screenPos - new Vector2(Screen.width, Screen.height) / 2;
+        var width = Screen.height * Mathf.Min(_targetAspectRatio, screenAspect);
+        return offset / width;
     }
 
     #endregion
