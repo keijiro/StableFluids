@@ -13,7 +13,23 @@ This project is a straightforward GPU-based implementation of Jos Stam's
 ## System Requirements
 
 - Unity 6
-- Compute shader support
+
+## Project Structure
+
+While this project uses URP, the following modules depend only on the Core
+Render Pipeline shader library, making them compatible with any render pipeline
+(Built-in/Universal/High-Definition).
+
+### `Assets/StableFluids`
+
+Contains Jos Stam's Stable Fluids implementation. Access the velocity field
+texture via `FluidSimulation.VelocityField` for rendering or to apply external
+forces.
+
+### `Assets/Marbling`
+
+Contains components for the marbling demo, which advects colors based on the
+velocity field.
 
 ## References
 
