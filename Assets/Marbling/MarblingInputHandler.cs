@@ -18,6 +18,7 @@ public sealed class MarblingInputHandler
 
     Vector2 _previousInput;
     RenderTexture _targetTexture;
+    bool _wasInputActive;
 
     #endregion
 
@@ -31,32 +32,57 @@ public sealed class MarblingInputHandler
 
     public void Update()
     {
-        // Try mouse input first, then touch, fallback to no input
-        if (TryUpdateMouseInput()) return;
-        if (TryUpdateTouchInput()) return;
-        UpdateNoInput();
+        // Check for actual input from either device
+        var hasMouseInput = CheckMouseInput();
+        var hasTouchInput = CheckTouchInput();
+        
+        // Prioritize touch over mouse if both are active
+        if (hasTouchInput)
+            ApplyTouchInput();
+        else if (hasMouseInput)
+            ApplyMouseInput();
+        else
+            UpdateNoInput();
     }
 
     #endregion
 
     #region Private methods
 
-    bool TryUpdateMouseInput()
+    bool CheckMouseInput()
     {
         var mouse = Mouse.current;
-        if (mouse == null) return false;
+        return mouse != null && 
+               (mouse.leftButton.isPressed || mouse.rightButton.isPressed);
+    }
+    
+    void ApplyMouseInput()
+    {
+        var mouse = Mouse.current;
+        if (mouse == null) return;
 
         var mousePos = mouse.position.ReadValue();
         var position = GetNormalizedInputPosition(mousePos);
         UpdateInputState
           (position, mouse.leftButton.isPressed, mouse.rightButton.isPressed);
-        return true;
     }
 
-    bool TryUpdateTouchInput()
+    bool CheckTouchInput()
     {
         var touchscreen = Touchscreen.current;
         if (touchscreen == null) return false;
+        
+        for (var i = 0; i < touchscreen.touches.Count; i++)
+            if (touchscreen.touches[i].isInProgress)
+                return true;
+        
+        return false;
+    }
+    
+    void ApplyTouchInput()
+    {
+        var touchscreen = Touchscreen.current;
+        if (touchscreen == null) return;
 
         var touchCount = 0;
         var averagePosition = Vector2.zero;
@@ -72,14 +98,13 @@ public sealed class MarblingInputHandler
             }
         }
 
-        if (touchCount == 0) return false;
+        if (touchCount == 0) return;
 
         averagePosition /= touchCount;
         // 1 touch = left, 2+ touches = right
         UpdateInputState
           (GetNormalizedInputPosition(averagePosition),
            touchCount == 1, touchCount >= 2);
-        return true;
     }
 
     // Fallback when no input devices are available
@@ -92,8 +117,19 @@ public sealed class MarblingInputHandler
         Position = position;
         LeftPressed = leftPressed;
         RightPressed = rightPressed;
-        Velocity = Position - _previousInput;
+        
+        var isInputActive = leftPressed || rightPressed;
+        
+        // Reset velocity on first frame of input
+        if (isInputActive && !_wasInputActive)
+            Velocity = Vector2.zero;
+        else if (isInputActive)
+            Velocity = Position - _previousInput;
+        else
+            Velocity = Vector2.zero;
+        
         _previousInput = Position;
+        _wasInputActive = isInputActive;
     }
 
     // Convert screen position to normalized coordinates with aspect ratio correction
