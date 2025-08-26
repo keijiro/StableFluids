@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.unity.burst": {
-      "version": "1.8.23",
+      "version": "1.8.24",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -29,7 +29,7 @@
       "dependencies": {}
     },
     "com.unity.inputsystem": {
-      "version": "1.14.1",
+      "version": "1.14.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -140,7 +140,7 @@
       }
     },
     "jp.keijiro.klutter-tools": {
-      "version": "2.1.0",
+      "version": "2.3.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
