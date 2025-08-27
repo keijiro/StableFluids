@@ -64,10 +64,7 @@ static class ShaderIDs
     public static readonly int MainTex = Shader.PropertyToID("_MainTex");
     public static readonly int W = Shader.PropertyToID("_W");
     public static readonly int P = Shader.PropertyToID("_P");
-
-    public static readonly int ForceOrigin = Shader.PropertyToID("_ForceOrigin");
-    public static readonly int ForceVector = Shader.PropertyToID("_ForceVector");
-    public static readonly int ForceExponent = Shader.PropertyToID("_ForceExponent");
+    public static readonly int ForceField = Shader.PropertyToID("_ForceField");
 }
 
 } // namespace StableFluids

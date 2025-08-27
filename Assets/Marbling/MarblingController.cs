@@ -6,7 +6,6 @@ public sealed class MarblingController : MonoBehaviour
 {
     #region Public properties
 
-    [field:SerializeField] public float Viscosity { get; set; } = 1e-6f;
     [field:SerializeField] public float PointForce { get; set; } = 300;
     [field:SerializeField] public float PointFalloff { get; set; } = 200;
 
@@ -14,24 +13,21 @@ public sealed class MarblingController : MonoBehaviour
 
     #region Editable attributes
 
-    [SerializeField] RenderTexture _targetTexture = null;
-    [SerializeField] float _simulationScale = 0.5f;
-    [SerializeField] Texture2D _initialImage = null;
+    [SerializeField] RenderTexture _colorInjection = null;
+    [SerializeField] RenderTexture _forceField = null;
 
     #endregion
 
     #region Project asset references
 
-    [SerializeField, HideInInspector] Shader _kernelsShader = null;
-    [SerializeField, HideInInspector] Shader _marblingShader = null;
+    [SerializeField, HideInInspector] Shader _shader = null;
 
     #endregion
 
     #region Private members
 
-    FluidSimulation _simulation;
     MarblingInputHandler _input;
-    Material _mateiral;
+    Material _material;
 
     #endregion
 
@@ -39,80 +35,61 @@ public sealed class MarblingController : MonoBehaviour
 
     void Start()
     {
-        Debug.Assert(_targetTexture != null, "Target texture is not set.");
-
-        var w = Mathf.RoundToInt(_targetTexture.width * _simulationScale);
-        var h = Mathf.RoundToInt(_targetTexture.height * _simulationScale);
-
-        _simulation = new FluidSimulation(w, h, _kernelsShader);
-        _input = new MarblingInputHandler(_targetTexture);
-        _mateiral = new Material(_marblingShader);
-
-        if (_initialImage != null) Graphics.Blit(_initialImage, _targetTexture);
+        _input = new MarblingInputHandler(_colorInjection);
+        _material = new Material(_shader);
     }
 
     void OnDestroy()
-    {
-        _simulation?.Dispose();
-        Destroy(_mateiral);
-    }
+      => Destroy(_material);
 
     void Update()
     {
-        if (_simulation == null) return;
         _input.Update();
-        StepSimulation();
-        StepVisualization();
+        UpdateColorInjection();
+        UpdateForceField();
     }
 
     #endregion
 
-    #region Simulation step methods
+    #region Update methods
 
-    void StepSimulation()
+    void UpdateColorInjection()
     {
-        // Simulation pre-step (advection + diffusion)
-        _simulation.Viscosity = Viscosity;
-        _simulation.PreStep();
-
-        // Apply forces based on input
         if (_input.RightPressed)
         {
-            var force = Random.insideUnitCircle * PointForce * 0.025f;
-            _simulation.ApplyPointForce(_input.Position, force, PointFalloff);
-        }
-        else if (_input.LeftPressed)
-        {
-            var force = _input.Velocity * PointForce;
-            _simulation.ApplyPointForce(_input.Position, force, PointFalloff);
-        }
-
-        // Simulation post-step (projection)
-        _simulation.PostStep();
-    }
-
-    void StepVisualization()
-    {
-        var temp = RTUtil.GetTemporaryCompatible(_targetTexture);
-
-        // Dye injection with right-button input
-        if (_input.RightPressed)
-        {
-            _mateiral.color = Color.HSVToRGB(Time.time % 1, 1, 1);
-            _mateiral.SetVector("_Origin", _input.Position);
-            _mateiral.SetFloat("_Falloff", PointFalloff);
-            Graphics.Blit(_targetTexture, temp, _mateiral, 0); // Pass 0: Color Injection
+            _material.color = Color.HSVToRGB(Time.time % 1, 1, 1);
+            _material.SetVector("_Origin", _input.Position);
+            _material.SetFloat("_Falloff", PointFalloff);
+            Graphics.Blit(null, _colorInjection, _material, 0);
         }
         else
         {
-            Graphics.CopyTexture(_targetTexture, temp);
+            Graphics.Blit(Texture2D.blackTexture, _colorInjection);
         }
+    }
 
-        // Color advection
-        _mateiral.SetTexture("_VelocityField", _simulation.VelocityField);
-        Graphics.Blit(temp, _targetTexture, _mateiral, 1); // Pass 1: Fluid Advection
+    void UpdateForceField()
+    {
+        if (_input.RightPressed)
+        {
+            BlitToForceField(Random.insideUnitCircle * PointForce * 0.025f);
+        }
+        else if (_input.LeftPressed)
+        {
+            BlitToForceField(_input.Velocity * PointForce);
+        }
+        else
+        {
+            Graphics.Blit(Texture2D.blackTexture, _forceField);
+        }
+    }
 
-        RenderTexture.ReleaseTemporary(temp);
+    void BlitToForceField(Vector2 force)
+    {
+        _material.SetVector("_Origin", _input.Position);
+        _material.SetFloat("_Falloff", PointFalloff);
+        _material.SetVector("_Force", force);
+        Graphics.Blit(null, _forceField, _material, 1);
     }
 
     #endregion

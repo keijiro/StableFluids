@@ -11,12 +11,6 @@ public sealed class FluidSimulation : IDisposable
 
     #endregion
 
-    #region Read-only properties
-
-    public RenderTexture VelocityField => _v1;
-
-    #endregion
-
     #region Private members
 
     readonly Vector2Int _resolution;
@@ -27,25 +21,24 @@ public sealed class FluidSimulation : IDisposable
 
     #region Constructor and Dispose
 
-    public FluidSimulation(int width, int height, Shader pixelKernelsShader)
+    public FluidSimulation(RenderTexture velocityField, Shader kernelsShader)
     {
-        _resolution = new Vector2Int(width, height);
+        _v1 = velocityField;
+        _resolution = new Vector2Int(_v1.width, _v1.height);
 
-        _v1 = RTUtil.AllocateRGHalf(_resolution);
         _v2 = RTUtil.AllocateRGHalf(_resolution);
         _v3 = RTUtil.AllocateRGHalf(_resolution);
         _p1 = RTUtil.AllocateRHalf(_resolution);
         _p2 = RTUtil.AllocateRHalf(_resolution);
         _divW = RTUtil.AllocateRHalf(_resolution);
 
-        _mat = new Material(pixelKernelsShader);
-        _mat.SetInt(ShaderIDs.TexWidth, width);
-        _mat.SetInt(ShaderIDs.TexHeight, height);
+        _mat = new Material(kernelsShader);
+        _mat.SetInt(ShaderIDs.TexWidth, _resolution.x);
+        _mat.SetInt(ShaderIDs.TexHeight, _resolution.y);
     }
 
     public void Dispose()
     {
-        UnityEngine.Object.Destroy(_v1);
         UnityEngine.Object.Destroy(_v2);
         UnityEngine.Object.Destroy(_v3);
         UnityEngine.Object.Destroy(_p1);
@@ -58,19 +51,31 @@ public sealed class FluidSimulation : IDisposable
 
     #region Simulation methods
 
+    public void ClearVelocityField()
+    {
+        Graphics.Blit(Texture2D.blackTexture, _v1);
+    }
+
+    public void ApplyForceField(RenderTexture forceField)
+    {
+        _mat.SetTexture(ShaderIDs.ForceField, forceField);
+        Graphics.Blit(_v2, _v3, _mat, 0);
+        (_v2, _v3) = (_v3, _v2);
+    }
+
     public void PreStep()
     {
         var dt = Time.deltaTime;
 
-        // Advection U -> W (v1 -> v2)
-        Graphics.Blit(_v1, _v2, _mat, 0);
+        // Advection U -> W (_v1 -> v2)
+        Graphics.Blit(_v1, _v2, _mat, 1);
 
         // Diffusion via Jacobi on vector field (pass 4)
         var dx = 1.0f / _resolution.x;
         var dif_alpha = dx * dx / (Mathf.Max(Viscosity, 1e-12f) * Mathf.Max(dt, 1e-12f));
         var beta = 4 + dif_alpha;
 
-        Graphics.CopyTexture(_v2, _v1); // B2_in = v1
+        Graphics.CopyTexture(_v2, _v1); // B2_in = _v1
 
         // Iterate: X2_in/out over v2 <-> v3
         for (var i = 0; i < 20; i++)
@@ -86,9 +91,9 @@ public sealed class FluidSimulation : IDisposable
 
     public void PostStep()
     {
-        // PSetup: compute divergence of W_in (v3) to divW and clear p1 (pass 2)
-        _mat.SetTexture(ShaderIDs.MainTex, _v3);
-        Graphics.Blit(_v3, _divW, _mat, 2);
+        // PSetup: compute divergence of W_in (v2) to divW and clear p1 (pass 2)
+        _mat.SetTexture(ShaderIDs.MainTex, _v2);
+        Graphics.Blit(_v2, _divW, _mat, 2);
         Graphics.Blit(Texture2D.blackTexture, _p1);
 
         // Jacobi on scalar field for pressure
@@ -103,23 +108,10 @@ public sealed class FluidSimulation : IDisposable
             (_p1, _p2) = (_p2, _p1);
         }
 
-        // PFinish (pass 5): subtract pressure gradient to get divergence-free field U_out (v1)
-        _mat.SetTexture(ShaderIDs.W, _v3);
+        // PFinish (pass 5): subtract pressure gradient to get divergence-free field U_out (_v1)
+        _mat.SetTexture(ShaderIDs.W, _v2);
         _mat.SetTexture(ShaderIDs.P, _p1);
-        Graphics.Blit(_v3, _v1, _mat, 5);
-    }
-
-    #endregion
-
-    #region Force methods
-
-    public void ApplyPointForce(Vector2 origin, Vector2 force, float falloff)
-    {
-        _mat.SetVector(ShaderIDs.ForceOrigin, origin);
-        _mat.SetFloat(ShaderIDs.ForceExponent, falloff);
-        _mat.SetVector(ShaderIDs.ForceVector, force);
-        _mat.SetTexture(ShaderIDs.MainTex, _v2);
-        Graphics.Blit(_v2, _v3, _mat, 1);
+        Graphics.Blit(_v2, _v1, _mat, 5);
     }
 
     #endregion

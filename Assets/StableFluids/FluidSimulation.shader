@@ -7,6 +7,7 @@ Shader "Hidden/StableFluids/FluidSimulation"
         _P ("", 2D) = ""
         _X ("", 2D) = ""
         _B ("", 2D) = ""
+        _ForceField ("", 2D) = ""
     }
 
 HLSLINCLUDE
@@ -24,11 +25,10 @@ Texture2D _W;
 Texture2D _P;
 Texture2D _X;
 Texture2D _B;
+Texture2D _ForceField;
 
 int _TexWidth, _TexHeight;
 float _Alpha, _Beta;
-float2 _ForceOrigin, _ForceVector;
-float _ForceExponent;
 
 // Common helpers
 int2 PixelCoord(float2 uv)
@@ -46,17 +46,20 @@ void VertexProcedural(uint vertexID : SV_VertexID,
                       out float4 positionCS : SV_POSITION,
                       out float2 uv : TEXCOORD0)
 {
-    float2 position = float2((vertexID << 1) & 2, vertexID & 2) * 2.0 - 1.0;
-    positionCS = float4(position.x, -position.y, 0, 1);
-    uv = position * 0.5 + 0.5;
-
-    // Fix UV coordinate inversion for OpenGL/WebGL platforms
-    #if !UNITY_UV_STARTS_AT_TOP
-    uv.y = 1.0 - uv.y;
-    #endif
+    positionCS = GetFullScreenTriangleVertexPosition(vertexID);
+    uv = GetFullScreenTriangleTexCoord(vertexID);
 }
 
-// Pass 0: Velocity Advection
+// Pass 0: Apply Force Field
+half4 FragmentApplyForce(float4 positionCS : SV_POSITION,
+                         float2 uv : TEXCOORD0) : SV_Target
+{
+    float2 velocity = _MainTex[PixelCoord(uv)].xy;
+    float2 force = _ForceField[PixelCoord(uv)].xy;
+    return half4(velocity + force, 0, 1);
+}
+
+// Pass 1: Velocity Advection
 half4 FragmentAdvect(float4 positionCS : SV_POSITION,
                      float2 uv : TEXCOORD0) : SV_Target
 {
@@ -67,20 +70,6 @@ half4 FragmentAdvect(float4 positionCS : SV_POSITION,
     float2 adv = _MainTex.SampleLevel(sampler_MainTex, uv_prev, 0).xy;
 
     return half4(adv, 0, 1);
-}
-
-// Pass 1: Add Force
-half4 FragmentForce(float4 positionCS : SV_POSITION,
-                    float2 uv : TEXCOORD0) : SV_Target
-{
-    float2 pos = uv - 0.5;
-    pos.y *= (float)_TexHeight / _TexWidth;
-
-    float amp = exp(-_ForceExponent * distance(_ForceOrigin, pos));
-
-    float2 v = _MainTex[PixelCoord(uv)].xy + _ForceVector * amp;
-
-    return half4(v, 0, 1);
 }
 
 // Pass 2: Projection setup
@@ -188,20 +177,20 @@ ENDHLSL
     {
         Cull Off ZWrite Off ZTest Always
 
-        // 0: Advect
+        // 0: ApplyForce
+        Pass
+        {
+            HLSLPROGRAM
+            #pragma vertex VertexProcedural
+            #pragma fragment FragmentApplyForce
+            ENDHLSL
+        }
+        // 1: Advect
         Pass
         {
             HLSLPROGRAM
             #pragma vertex VertexProcedural
             #pragma fragment FragmentAdvect
-            ENDHLSL
-        }
-        // 1: Force
-        Pass
-        {
-            HLSLPROGRAM
-            #pragma vertex VertexProcedural
-            #pragma fragment FragmentForce
             ENDHLSL
         }
         // 2: PSetup

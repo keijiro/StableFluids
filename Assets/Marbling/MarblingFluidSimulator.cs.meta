@@ -1,12 +1,12 @@
 fileFormatVersion: 2
-guid: 68b35f6f5dea6274db0eda640e08abc2
+guid: d85b516f15ac844ca9bbe5c5dbd932e3
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
-  - _colorInjection: {fileID: 8400000, guid: 9f6f8ff8db5154ec3a818fdf0a35f31a, type: 2}
+  - _velocityField: {fileID: 8400000, guid: a637d858b4e8a43e6babfe9244a39176, type: 2}
   - _forceField: {fileID: 8400000, guid: 50e986256d755482fb4dcb092d19f666, type: 2}
-  - _shader: {fileID: 4800000, guid: ae8ec69a42aab44e58c38501811bda46, type: 3}
+  - _kernelShader: {fileID: 4800000, guid: 636ac93388c5343c894f80bf0fc605f2, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
