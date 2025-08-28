@@ -8,7 +8,7 @@ Shader "StableFluids/Canvas"
 
 HLSLINCLUDE
 
-#include "../Common/Shaders/CustomRenderTexture.hlsl"
+#include "../../Common/Shaders/CustomRenderTexture.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 TEXTURE2D(_InjectTex);

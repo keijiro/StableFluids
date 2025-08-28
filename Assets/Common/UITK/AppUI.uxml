@@ -1,3 +1,3 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:VisualElement name="Surface" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Canvas/Canvas.asset?fileID=8600000&amp;guid=84c1663b5ecf149c0bbe31adb8a81842&amp;type=2#Canvas&quot;); -unity-background-scale-mode: scale-to-fit;" />
+    <engine:VisualElement name="Surface" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Marbling/Canvas/Canvas.asset?fileID=8600000&amp;guid=84c1663b5ecf149c0bbe31adb8a81842&amp;type=2#Canvas&quot;); -unity-background-scale-mode: scale-to-fit;" />
 </engine:UXML>
