@@ -36,7 +36,9 @@ public sealed class MarblingController : MonoBehaviour
     void Start()
     {
         _input = new MarblingInputHandler(_colorInjection);
+
         _material = new Material(_shader);
+        _material.SetFloat("_Aspect", (float)_forceField.width / _forceField.height);
 
         Graphics.Blit(Texture2D.blackTexture, _colorInjection);
         Graphics.Blit(Texture2D.blackTexture, _forceField);

@@ -10,12 +10,13 @@ float2 _Origin;
 float _Falloff;
 float4 _Color;
 float2 _Force;
+float _Aspect;
 
 // Position-based amplitude with peak at _Origin and falloff with _Falloff
 float GetAmplitude(float2 uv)
 {
     float2 pos = uv - 0.5;
-    pos.y *= _ScaledScreenParams.y / _ScaledScreenParams.x;
+    pos.y /= _Aspect;
     return exp(-_Falloff * distance(_Origin, pos));
 }
 
